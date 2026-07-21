@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 
 import { MetricCard } from "./metric-card";
+import { FinancialBriefing } from "./financial-briefing";
 
 const metrics = [
   {
@@ -96,6 +97,8 @@ export function DashboardContent() {
           </div>
         ))}
       </div>
+
+      <FinancialBriefing />
     </section>
   );
 }

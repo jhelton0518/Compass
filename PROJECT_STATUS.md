@@ -1,15 +1,14 @@
 # Compass Project Status
 
-_Last updated: July 19, 2026_
+_Last updated: July 21, 2026_
 
 ## Checkpoint
 
 - Repository: `jhelton0518/Compass`
 - Branch: `main`
-- Foundation commit: `8f81bec12f4c6e2eb4e7085bc64350eaa5b4589d`
-- Foundation commit message: `Working financial data foundation`
-- Working tree at the foundation checkpoint: clean
-- Current phase: ready for UI
+- Financial foundation commit: `8f81bec12f4c6e2eb4e7085bc64350eaa5b4589d`
+- Financial foundation commit message: `Working financial data foundation`
+- Current phase: dashboard foundation complete
 
 ## Stack
 
@@ -32,13 +31,23 @@ _Last updated: July 19, 2026_
 - Monthly income statement seed data exists.
 - The income statement service can retrieve a selected period.
 - The page reads financial data through the service layer.
-- Commit `8f81bec` was reported as compiling successfully before this checkpoint.
+- The responsive application shell and fixed dark-navy navigation are complete.
+- The dashboard header includes the Volunteer Custom Homes company selector and
+  an "As of June 2026" reporting-period control.
+- The dashboard overview presents five static KPI cards for Revenue, Gross
+  Profit, Operating Profit, Net Income, and Cash.
+- The Financial Briefing presents a static, owner-focused summary of growth,
+  gross margin pressure, improved Overhead discipline, and tight cash.
+- `npm run lint` and `npm run build` pass as of July 21, 2026.
 
 ## Current Application Behavior
 
-`app/page.tsx` requests period `2025-07` through `getIncomeStatement()` and displays Compass, Volunteer Custom Homes, Period, Revenue, Labor, Material, and Office Payroll.
+`app/page.tsx` renders the Compass application shell with the dashboard header
+and dashboard content. The dashboard currently includes five static KPI cards
+and the approved static Financial Briefing beneath them.
 
-This is a temporary proof that the data/service path works. It is not the intended dashboard UI.
+The current UI is intentionally static. Calculations, analytics wiring, and new
+prototype data remain out of scope for this checkpoint.
 
 ## Important Files
 
@@ -73,18 +82,18 @@ This is a temporary proof that the data/service path works. It is not the intend
 
 ## Current Objective
 
-Build the Compass interface without redesigning the financial foundation and without adding calculations yet.
+The initial dashboard UI sequence is complete:
 
-Implementation order:
+1. Application shell and left navigation
+2. Dashboard header
+3. Company selector
+4. "As of June 2026" control
+5. Dashboard layout
+6. Five-card KPI overview
+7. Financial Briefing
 
-1. Application shell
-2. Left navigation
-3. Header
-4. Company selector
-5. "As of June 2026" control
-6. Dashboard layout
-7. KPI cards
-8. Financial Briefing panel
+Continue building one isolated UI feature at a time without redesigning the
+financial foundation or adding calculations unless explicitly requested.
 
 ## UI Direction
 
@@ -125,4 +134,6 @@ The initial analysis priority is:
 
 ## Next Action
 
-Implement and verify the application shell as the first isolated UI feature. Do not add KPI calculations or analytics during that step.
+Review the completed dashboard checkpoint and select the next isolated Compass
+UI feature. Do not add calculations, analytics wiring, or new prototype data
+until that work is explicitly in scope.
