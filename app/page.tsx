@@ -1,59 +1,20 @@
-import { getIncomeStatement } from "../lib/services/income-statement";
+import { Sidebar } from "../components/sidebar";
 
 export default function HomePage() {
-  const statement = getIncomeStatement("2025-07");
-
-  if (!statement) {
-    return <main>No data found.</main>;
-  }
-
   return (
-    <main style={{ padding: 40, fontFamily: "Arial, sans-serif" }}>
-      <h1>Compass</h1>
+    <div className="min-h-screen bg-[#f4f6f8] md:pl-64">
+      <Sidebar />
 
-      <h2>Volunteer Custom Homes</h2>
+      <main className="min-h-screen px-6 py-8 sm:px-8 lg:px-12 lg:py-10">
+        <div className="mx-auto max-w-[1440px]">
+          <p className="text-sm font-medium text-slate-500">Overview</p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-950">
+            Dashboard
+          </h1>
 
-      <p>
-        <strong>Period:</strong> {statement.period}
-      </p>
-
-      <hr />
-
-      <p>
-        <strong>Revenue:</strong>{" "}
-        {statement.revenue.toLocaleString("en-US", {
-          style: "currency",
-          currency: "USD",
-          maximumFractionDigits: 0,
-        })}
-      </p>
-
-      <p>
-        <strong>Labor:</strong>{" "}
-        {statement.labor.toLocaleString("en-US", {
-          style: "currency",
-          currency: "USD",
-          maximumFractionDigits: 0,
-        })}
-      </p>
-
-      <p>
-        <strong>Material:</strong>{" "}
-        {statement.material.toLocaleString("en-US", {
-          style: "currency",
-          currency: "USD",
-          maximumFractionDigits: 0,
-        })}
-      </p>
-
-      <p>
-        <strong>Office Payroll:</strong>{" "}
-        {statement.officePayroll.toLocaleString("en-US", {
-          style: "currency",
-          currency: "USD",
-          maximumFractionDigits: 0,
-        })}
-      </p>
-    </main>
+          <div className="mt-8 min-h-[420px] rounded-2xl border border-slate-200/80 bg-white shadow-sm" />
+        </div>
+      </main>
+    </div>
   );
 }
