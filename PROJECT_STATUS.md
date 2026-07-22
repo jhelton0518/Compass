@@ -8,7 +8,7 @@ _Last updated: July 22, 2026_
 - Branch: `main`
 - Financial foundation commit: `8f81bec12f4c6e2eb4e7085bc64350eaa5b4589d`
 - Financial foundation commit message: `Working financial data foundation`
-- Current phase: dashboard profitability trends complete
+- Current phase: financial engine checkpoint 1 complete
 
 ## Stack
 
@@ -45,6 +45,12 @@ _Last updated: July 22, 2026_
 - The approved profitability values reconcile as Gross Profit 25.8% less
   Overhead 14.6% equals Operating Profit 11.2%; less Net Other Expense 0.8%
   equals Net Income 10.4%.
+- Financial engine checkpoint 1 defines integer-dollar calculation contracts,
+  monthly subtotals, ordered R12M windows, explicit incomplete-window results,
+  zero-revenue ratio handling, and presentation formatters.
+- Focused synthetic-fixture tests cover formulas, missing and open periods,
+  zero revenue, signed negative values, formatting, and exact reconciliation.
+- `npm run test:financial` passes 10 focused financial-engine tests.
 - `npm run lint` and `npm run build` pass as of July 22, 2026.
 
 ## Current Application Behavior
@@ -83,7 +89,8 @@ prototype data remain out of scope for this checkpoint.
 ## Current Technical Notes
 
 - `lib/services/income-statement.ts` exports `getIncomeStatement()` and `getAllIncomeStatements()`.
-- `lib/services/financial-service.ts` currently exists as an empty placeholder and is not part of the working page path.
+- `lib/services/financial-service.ts` now contains the presentation-independent
+  calculation engine. It is not wired into the dashboard yet.
 - The repository version of `data/income-statements.ts` currently contains periods July through December 2025. Additional prototype periods should be added only when that work is explicitly in scope.
 - A previous failure was caused by moved TypeScript files being saved as zero-byte files. Always confirm files are saved and non-empty before troubleshooting export errors.
 - If stale Turbopack output appears after file changes, delete `.next` and restart the development server.
@@ -101,9 +108,9 @@ The initial dashboard UI sequence is complete:
 7. Financial Briefing
 8. Profitability Trends
 
-The Profitability Trends objective is complete. Continue building one isolated
-UI feature at a time without redesigning the financial foundation or adding
-calculations unless explicitly requested.
+Financial engine checkpoint 1 is complete. The existing prototype dataset and
+approved dashboard presentation remain unchanged and disconnected from the new
+engine until approved monthly data can reproduce the dashboard values.
 
 ## UI Direction
 
@@ -144,6 +151,6 @@ The initial analysis priority is:
 
 ## Next Action
 
-Review the completed Profitability Trends checkpoint and select the next
-isolated Compass UI feature. Do not add calculations, analytics wiring, or new
-prototype data until that work is explicitly in scope.
+Prepare financial engine checkpoint 2: approve and implement the July 2024
+through June 2026 monthly prototype dataset, then validate current and prior
+R12M windows. Do not replace dashboard fixtures until service results reconcile.
