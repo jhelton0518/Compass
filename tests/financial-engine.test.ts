@@ -650,7 +650,7 @@ test("builds YTD monthly columns from January and leaves future months blank", (
     false, false, false, false, false, false,
   ]);
   assert.equal(model.totalColumnLabel, "YTD Total");
-  const revenue = model.rows.find((row) => row.label === "Revenue")!;
+  const revenue = model.rows.find((row) => row.label === "Total Revenue")!;
   assert.deepEqual(revenue.values.slice(6), [null, null, null, null, null, null]);
   assert.equal(revenue.totalAmount, 3_400_000);
   assert.deepEqual(
@@ -671,8 +671,84 @@ test("builds exactly 12 ordered R12M columns plus reconciled totals", () => {
   assert.equal(model.columns.length, 12);
   assert.deepEqual(model.columns.map((column) => column.period), getMonthlyPeriodWindow("2026-06", 12));
   assert.equal(model.totalColumnLabel, "R12M Total");
-  assert.equal(model.rows.find((row) => row.label === "Revenue")?.totalAmount, 5_240_000);
+  assert.equal(model.rows.find((row) => row.label === "Total Revenue")?.totalAmount, 5_240_000);
   assert.equal(model.rows.find((row) => row.label === "Net Income")?.totalAmount, 544_960);
+});
+
+test("orders Income Statement detail before section subtotals", () => {
+  const model = buildIncomeStatementViewModel({ endPeriod: "2026-06", view: "r12m", statements: incomeStatements, periods: financialPeriods });
+  if (model.status !== "complete") assert.fail("Expected complete R12M statement.");
+  const index = (label: string) => model.rows.findIndex((row) => row.label === label);
+
+  assert.ok(index("Revenue") < index("Contract Revenue"));
+  assert.ok(index("Contract Revenue") < index("Total Revenue"));
+  assert.ok(index("Direct Costs") < index("Labor"));
+  assert.ok(index("Other Direct Costs") < index("Total Direct Costs"));
+  assert.ok(index("Indirect Costs") < index("Fuel"));
+  assert.ok(index("Health Insurance") < index("Total Indirect Costs"));
+  assert.ok(index("Overhead") < index("Office Payroll"));
+  assert.ok(index("Travel") < index("Total Overhead"));
+  assert.ok(index("Other Income / Expense") < index("Other Income"));
+  assert.ok(index("Interest Expense") < index("Total Other Income / Expense"));
+  assert.equal(model.rows[index("Gross Profit") + 1].label, "Gross Profit %");
+  assert.equal(model.rows[index("Operating Profit") + 1].label, "Operating Profit %");
+  assert.equal(model.rows[index("Net Income") + 1].label, "Net Income %");
+});
+
+test("reconciles statement section totals and profit rows for every displayed month", () => {
+  const model = buildIncomeStatementViewModel({ endPeriod: "2026-06", view: "r12m", statements: incomeStatements, periods: financialPeriods });
+  if (model.status !== "complete") assert.fail("Expected complete R12M statement.");
+  const row = (label: string) => model.rows.find((item) => item.label === label)!;
+
+  model.columns.forEach((_, columnIndex) => {
+    const directDetail = ["Labor", "Equipment", "Material", "Subcontractors", "Other Direct Costs"].reduce((sum, label) => sum + (row(label).values[columnIndex] ?? 0), 0);
+    const indirectDetail = ["Fuel", "Equipment Depreciation", "Small Tools", "General Liability", "Health Insurance"].reduce((sum, label) => sum + (row(label).values[columnIndex] ?? 0), 0);
+    const overheadDetail = ["Office Payroll", "Payroll Taxes", "Rent", "Utilities", "Marketing", "IT", "Meals", "Travel"].reduce((sum, label) => sum + (row(label).values[columnIndex] ?? 0), 0);
+    assert.equal(row("Total Direct Costs").values[columnIndex], directDetail);
+    assert.equal(row("Total Indirect Costs").values[columnIndex], indirectDetail);
+    assert.equal(row("Total Overhead").values[columnIndex], overheadDetail);
+    assert.equal(row("Gross Profit").values[columnIndex], row("Total Revenue").values[columnIndex]! - directDetail - indirectDetail);
+    assert.equal(row("Operating Profit").values[columnIndex], row("Gross Profit").values[columnIndex]! - overheadDetail);
+    assert.equal(row("Net Income").values[columnIndex], row("Operating Profit").values[columnIndex]! + row("Total Other Income / Expense").values[columnIndex]!);
+  });
+});
+
+test("uses one identical ordered R12M series for Profitability and Income Statement", () => {
+  const profitability = buildProfitabilityViewModel({ companyId: "vch", endPeriod: "2026-06", statements: incomeStatements, periods: financialPeriods });
+  const statement = buildIncomeStatementViewModel({ endPeriod: "2026-06", view: "r12m", statements: incomeStatements, periods: financialPeriods });
+  if (profitability.status !== "complete" || statement.status !== "complete") assert.fail("Expected complete analysis models.");
+
+  assert.equal(statement.chartSeries.length, 12);
+  assert.deepEqual(statement.chartSeries.map((point) => point.period), getMonthlyPeriodWindow("2026-06", 12));
+  assert.deepEqual(statement.chartSeries.map((point) => point.fullLabel), ["July 2025", "August 2025", "September 2025", "October 2025", "November 2025", "December 2025", "January 2026", "February 2026", "March 2026", "April 2026", "May 2026", "June 2026"]);
+  for (let index = 0; index < 12; index += 1) {
+    for (const key of ["grossProfitPercent", "overheadPercent", "operatingProfitPercent", "netIncomePercent"] as const) {
+      assert.equal(statement.chartSeries[index][key], profitability.rolling[index][key]);
+    }
+  }
+});
+
+test("reconciles every displayed R12M endpoint through Net Income", () => {
+  const model = buildIncomeStatementViewModel({ endPeriod: "2026-06", view: "r12m", statements: incomeStatements, periods: financialPeriods });
+  if (model.status !== "complete") assert.fail("Expected complete statement charts.");
+  for (const point of model.chartSeries) {
+    const { totals, grossProfitPercent, overheadPercent, operatingProfitPercent, netOtherIncomeExpensePercent, netIncomePercent } = point;
+    assert.equal(totals.grossProfit, totals.revenue - totals.directCosts - totals.indirectCosts);
+    assert.equal(totals.operatingProfit, totals.grossProfit - totals.overhead);
+    assert.equal(totals.netOtherIncomeExpense, totals.otherIncome - totals.interestExpense);
+    assert.equal(totals.netIncome, totals.operatingProfit + totals.netOtherIncomeExpense);
+    assert.equal(grossProfitPercent, totals.grossProfit / totals.revenue * 100);
+    assert.equal(overheadPercent, totals.overhead / totals.revenue * 100);
+    assert.equal(operatingProfitPercent, totals.operatingProfit / totals.revenue * 100);
+    assert.equal(netOtherIncomeExpensePercent, totals.netOtherIncomeExpense / totals.revenue * 100);
+    assert.equal(netIncomePercent, totals.netIncome / totals.revenue * 100);
+  }
+  const june = model.chartSeries.at(-1)!;
+  assert.equal(june.totals.revenue, 5_240_000);
+  assert.equal(june.totals.netIncome, 544_960);
+  assert.equal(formatPercentage(june.grossProfitPercent), "25.8%");
+  assert.equal(formatPercentage(june.overheadPercent), "14.6%");
+  assert.equal(formatPercentage(june.netIncomePercent), "10.4%");
 });
 
 test("changes Income Statement windows with the selected as-of period", () => {

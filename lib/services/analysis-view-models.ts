@@ -5,6 +5,7 @@ import { formatComparisonPoints, formatDollarAbbreviation, formatDollars, format
 
 const ratioKeys = ["grossProfitPercent", "overheadPercent", "operatingProfitPercent", "netIncomePercent"] as const;
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const fullMonthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 function periodLabel(period: string) {
   const [year, month] = period.split("-").map(Number);
@@ -13,7 +14,7 @@ function periodLabel(period: string) {
 
 function fullPeriodLabel(period: string) {
   const [year, month] = period.split("-").map(Number);
-  return `${monthNames[month - 1]} ${year}`;
+  return `${fullMonthNames[month - 1]} ${year}`;
 }
 
 export function buildProfitabilityViewModel({ companyId, endPeriod, statements, periods }: { companyId: string; endPeriod: string; statements: readonly MonthlyIncomeStatement[]; periods: readonly FinancialPeriodMetadata[] }) {
@@ -63,24 +64,40 @@ export function buildIncomeStatementViewModel({ endPeriod, view, statements, per
   const displayPeriods=view==="ytd"?Array.from({length:12},(_,index)=>`${endMeta.year}-${String(index+1).padStart(2,"0")}`):populatedPeriods;
   const columns=displayPeriods.map(period=>({period,label:periodLabel(period),available:populatedPeriods.includes(period)}));
   const populatedStatements=populatedPeriods.map(period=>map.get(period)!); const totals=aggregateIncomeStatements(populatedStatements); const ratios=calculateProfitabilityRatios(totals);
-  type Kind="standard"|"subtotal"|"profit"|"final"|"detail";
-  type RowSpec={label:string;kind:Kind;amount:(statement:MonthlyIncomeStatement)=>number};
+  type Kind="section"|"subtotal"|"profit"|"final"|"detail"|"ratio";
+  type RowSpec={label:string;kind:Kind;amount?:(statement:MonthlyIncomeStatement)=>number;ratioKey?:keyof ReturnType<typeof calculateProfitabilityRatios>};
   const subtotal=(statement:MonthlyIncomeStatement)=>calculateMonthlySubtotals(statement);
   const specs:RowSpec[]=[
-    {label:"Revenue",kind:"subtotal",amount:statement=>statement.revenue},
-    {label:"Direct Costs",kind:"subtotal",amount:statement=>subtotal(statement).directCosts},...detailFields.slice(0,5).map(([label,field])=>({label,kind:"detail" as const,amount:(statement:MonthlyIncomeStatement)=>statement[field]})),
-    {label:"Indirect Costs",kind:"subtotal",amount:statement=>subtotal(statement).indirectCosts},...detailFields.slice(5,10).map(([label,field])=>({label,kind:"detail" as const,amount:(statement:MonthlyIncomeStatement)=>statement[field]})),
+    {label:"Revenue",kind:"section"},{label:"Contract Revenue",kind:"detail",amount:statement=>statement.revenue},{label:"Total Revenue",kind:"subtotal",amount:statement=>statement.revenue},
+    {label:"Direct Costs",kind:"section"},...detailFields.slice(0,5).map(([label,field])=>({label,kind:"detail" as const,amount:(statement:MonthlyIncomeStatement)=>statement[field]})),{label:"Total Direct Costs",kind:"subtotal",amount:statement=>subtotal(statement).directCosts},
+    {label:"Indirect Costs",kind:"section"},...detailFields.slice(5,10).map(([label,field])=>({label,kind:"detail" as const,amount:(statement:MonthlyIncomeStatement)=>statement[field]})),{label:"Total Indirect Costs",kind:"subtotal",amount:statement=>subtotal(statement).indirectCosts},
+    {label:"Total Cost of Goods Sold",kind:"subtotal",amount:statement=>subtotal(statement).directCosts+subtotal(statement).indirectCosts},
     {label:"Gross Profit",kind:"profit",amount:statement=>subtotal(statement).grossProfit},
-    {label:"Overhead",kind:"subtotal",amount:statement=>subtotal(statement).overhead},...detailFields.slice(10).map(([label,field])=>({label,kind:"detail" as const,amount:(statement:MonthlyIncomeStatement)=>statement[field]})),
+    {label:"Gross Profit %",kind:"ratio",ratioKey:"grossProfitPercent"},
+    {label:"Overhead",kind:"section"},...detailFields.slice(10).map(([label,field])=>({label,kind:"detail" as const,amount:(statement:MonthlyIncomeStatement)=>statement[field]})),{label:"Total Overhead",kind:"subtotal",amount:statement=>subtotal(statement).overhead},
     {label:"Operating Profit",kind:"profit",amount:statement=>subtotal(statement).operatingProfit},
-    {label:"Other Income / Expense",kind:"subtotal",amount:statement=>subtotal(statement).netOtherIncomeExpense},
-    {label:"Other Income",kind:"detail",amount:statement=>statement.otherIncome},{label:"Interest Expense",kind:"detail",amount:statement=>statement.interestExpense},
+    {label:"Operating Profit %",kind:"ratio",ratioKey:"operatingProfitPercent"},
+    {label:"Other Income / Expense",kind:"section"},{label:"Other Income",kind:"detail",amount:statement=>statement.otherIncome},{label:"Interest Expense",kind:"detail",amount:statement=>-statement.interestExpense},{label:"Total Other Income / Expense",kind:"subtotal",amount:statement=>subtotal(statement).netOtherIncomeExpense},
     {label:"Net Income",kind:"final",amount:statement=>subtotal(statement).netIncome},
+    {label:"Net Income %",kind:"ratio",ratioKey:"netIncomePercent"},
   ];
-  const rows=specs.map(spec=>{const values=displayPeriods.map(period=>populatedPeriods.includes(period)?spec.amount(map.get(period)!):null);const totalAmount=values.reduce<number>((sum,value)=>sum+(value??0),0);return {label:spec.label,kind:spec.kind,values,displayValues:values.map(value=>value===null?null:formatDollars(value)),totalAmount,totalValue:formatDollars(totalAmount)};});
+  const tableDollars=(value:number)=>value===0?"—":value<0?`(${formatDollars(Math.abs(value))})`:formatDollars(value);
+  const compactDollars=(value:number)=>value===0?"—":value<0?`(${formatDollarAbbreviation(Math.abs(value))})`:formatDollarAbbreviation(value);
+  const rows=specs.map(spec=>{
+    if(spec.kind==="section") return {label:spec.label,kind:spec.kind,values:displayPeriods.map(()=>null),displayValues:displayPeriods.map(()=>null),compactDisplayValues:displayPeriods.map(()=>null),totalAmount:0,totalValue:null,compactTotalValue:null};
+    const values=displayPeriods.map(period=>{
+      if(!populatedPeriods.includes(period)) return null;
+      const statement=map.get(period)!;
+      return spec.kind==="ratio"?calculateProfitabilityRatios(subtotal(statement))[spec.ratioKey!] as number|null:spec.amount!(statement);
+    });
+    const totalAmount=spec.kind==="ratio"?(ratios[spec.ratioKey!] as number|null):values.reduce<number>((sum,value)=>sum+(value??0),0);
+    const display=(value:number|null)=>value===null?null:spec.kind==="ratio"?formatPercentage(value):tableDollars(value);
+    const compact=(value:number|null)=>value===null?null:spec.kind==="ratio"?formatPercentage(value):compactDollars(value);
+    return {label:spec.label,kind:spec.kind,values,displayValues:values.map(display),compactDisplayValues:values.map(compact),totalAmount,totalValue:display(totalAmount),compactTotalValue:compact(totalAmount)};
+  });
   const closedPeriodIds=periods.filter(period=>period.status==="closed").map(period=>period.id);
   const chartResults=populatedPeriods.map(period=>calculateR12MProfitability({companyId:"vch",endPeriod:period,statements,closedPeriodIds}));
-  const chartSeries=chartResults.flatMap(result=>result.status==="complete"?[{period:result.window.endPeriod,label:periodLabel(result.window.endPeriod),fullLabel:fullPeriodLabel(result.window.endPeriod),grossProfitPercent:result.ratios.grossProfitPercent,overheadPercent:result.ratios.overheadPercent,netIncomePercent:result.ratios.netIncomePercent}]:[]);
+  const chartSeries=chartResults.flatMap(result=>result.status==="complete"?[{period:result.window.endPeriod,label:periodLabel(result.window.endPeriod),fullLabel:fullPeriodLabel(result.window.endPeriod),grossProfitPercent:result.ratios.grossProfitPercent,overheadPercent:result.ratios.overheadPercent,operatingProfitPercent:result.ratios.operatingProfitPercent,netOtherIncomeExpensePercent:result.ratios.netOtherIncomeExpensePercent,netIncomePercent:result.ratios.netIncomePercent,totals:result.totals}]:[]);
   const chartUnavailablePeriods=chartResults.filter(result=>result.status==="incomplete").map(result=>result.window.endPeriod);
   return {status:"complete" as const,view,endPeriod,startPeriod:populatedPeriods[0],columns,totalColumnLabel:view==="monthly"?null:view==="ytd"?"YTD Total":"R12M Total",totals,ratios,rows,chartSeries,chartUnavailablePeriods};
 }

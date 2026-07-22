@@ -95,6 +95,14 @@ _Last updated: July 22, 2026_
 - Gross Profit, Overhead, and Net Income margin charts accompany
   the displayed Income Statement columns using aggregated rolling-R12M values
   ending in each displayed month.
+- The R12M Income Statement now presents section bands before account detail,
+  section subtotals after detail, and distinct Gross Profit, Operating Profit,
+  Net Income, and percentage rows. Its fixed-layout desktop table fits all 12
+  monthly columns plus R12M Total at 1280px and wider; tablet and mobile retain
+  an internal scrollbar and sticky Category column.
+- Twelve-point charts display all 12 crisp, angled month labels while retaining
+  measured SVG dimensions, clamped interactive tooltips, active markers, and
+  guide lines. Live checks found no label intersections at desktop width.
 - Permanent chart convention: P&L charts default to R12M values calculated from
   aggregated trailing-12-month dollars, never averages of monthly percentages.
   Monthly P&L trends require explicit selection and labeling; operational and
@@ -103,8 +111,12 @@ _Last updated: July 22, 2026_
   derives KPI totals, aging buckets, customer risk, days past due, collection
   status, and owner insights from invoice due dates and amounts. No age or
   status values are stored in invoice fixtures.
-- `npm run test:financial` passes 29 focused financial-engine, dashboard,
+- `npm run test:financial` passes 33 focused financial-engine, dashboard,
   profitability, Income Statement, AR transformation, and navigation tests.
+- Income Statement financial QC confirms every displayed rolling endpoint uses
+  the same service series as Profitability and reconciles Direct Costs,
+  Indirect Costs, Gross Profit, Overhead, Operating Profit, signed net Other
+  Income/Expense, and Net Income from aggregated trailing-12-month dollars.
 
 ## Current Application Behavior
 

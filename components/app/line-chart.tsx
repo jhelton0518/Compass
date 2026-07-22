@@ -11,8 +11,8 @@ type LineChartProps = {
   tone?: "blue" | "green";
 };
 
-const CHART_HEIGHT = 224;
-const MARGINS = { top: 18, right: 18, bottom: 42, left: 58 };
+const CHART_HEIGHT = 260;
+const MARGINS = { top: 18, right: 18, bottom: 76, left: 58 };
 
 function formatValue(value: number, format: LineChartProps["format"]) {
   if (format === "percentage") return `${value.toFixed(1)}%`;
@@ -23,10 +23,9 @@ function formatValue(value: number, format: LineChartProps["format"]) {
   return `${sign}$${Math.round(magnitude)}`;
 }
 
-function selectTickIndexes(length: number, width: number) {
-  if (length <= 1) return [0];
-  const count = Math.max(2, Math.min(6, length, Math.floor(width / 86)));
-  return Array.from(new Set(Array.from({ length: count }, (_, index) => Math.round((index * (length - 1)) / (count - 1)))));
+function axisLabel(label: string) {
+  const match = /^(\w{3,9})\s+(\d{4})$/.exec(label);
+  return match ? `${match[1].slice(0, 3)} ${match[2].slice(2)}` : label;
 }
 
 export function LineChart({ values, labels, format, metricName, tooltipPrefix, tone = "blue" }: LineChartProps) {
@@ -61,7 +60,7 @@ export function LineChart({ values, labels, format, metricName, tooltipPrefix, t
       value,
       label: labels[index],
     }));
-    return { minimum, maximum, points, path: points.map((point, index) => `${index === 0 ? "M" : "L"}${point.x} ${point.y}`).join(" "), tickIndexes: selectTickIndexes(values.length, plotWidth) };
+    return { minimum, maximum, points, path: points.map((point, index) => `${index === 0 ? "M" : "L"}${point.x} ${point.y}`).join(" ") };
   }, [labels, values, width]);
 
   const active = activeIndex === null ? null : geometry?.points[activeIndex] ?? null;
@@ -71,7 +70,7 @@ export function LineChart({ values, labels, format, metricName, tooltipPrefix, t
   const lineColor = tone === "green" ? "#059669" : "#2563eb";
 
   return (
-    <div ref={containerRef} className="h-56 w-full overflow-hidden" data-chart-measured-width={width || undefined}>
+    <div ref={containerRef} className="h-[260px] w-full overflow-hidden" data-chart-measured-width={width || undefined}>
       {geometry ? (
         <svg width={width} height={CHART_HEIGHT} role="img" aria-describedby={descriptionId} className="block" data-responsive-line-chart="true">
           <desc id={descriptionId}>{metricName} from {labels[0]} through {labels.at(-1)}. Focus or tap a point for details.</desc>
@@ -99,7 +98,7 @@ export function LineChart({ values, labels, format, metricName, tooltipPrefix, t
               <circle cx={point.x} cy={point.y} r={activeIndex === index ? 6 : 4} fill={activeIndex === index ? "white" : lineColor} stroke={lineColor} strokeWidth={activeIndex === index ? 3 : 1.5} />
             </g>
           ))}
-          {geometry.tickIndexes.map((index) => <text key={index} x={geometry.points[index].x} y={CHART_HEIGHT - 16} textAnchor={index === 0 ? "start" : index === values.length - 1 ? "end" : "middle"} fontSize="10" fill="#64748b">{labels[index]}</text>)}
+          {geometry.points.map((point, index) => <text key={`tick-${index}`} x={point.x} y={CHART_HEIGHT - MARGINS.bottom + 16} textAnchor="end" dominantBaseline="middle" transform={`rotate(-40 ${point.x} ${CHART_HEIGHT - MARGINS.bottom + 16})`} fontSize="10" fill="#64748b">{axisLabel(point.label)}</text>)}
           {active ? <g pointerEvents="none"><rect x={tooltipX} y={tooltipY} width={tooltipWidth} height="50" rx="8" fill="#0f172a" opacity="0.97" /><text x={tooltipX + 12} y={tooltipY + 20} fontSize="11" fontWeight="600" fill="white">{tooltipPrefix} {active.label}</text><text x={tooltipX + 12} y={tooltipY + 38} fontSize="11" fill="#cbd5e1">{metricName}: {formatValue(active.value, format)}</text></g> : null}
         </svg>
       ) : null}
