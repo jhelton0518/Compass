@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { calculatePercentageChartDomain } from "../../lib/services/chart-domain";
 
 type LineChartProps = {
   values: number[];
@@ -50,9 +51,10 @@ export function LineChart({ values, labels, format, metricName, tooltipPrefix, t
     const plotHeight = CHART_HEIGHT - MARGINS.top - MARGINS.bottom;
     const minimum = Math.min(...values);
     const maximum = Math.max(...values);
-    const padding = Math.max((maximum - minimum) * 0.15, Math.abs(maximum) * 0.03, 1);
-    const low = minimum - padding;
-    const high = maximum + padding;
+    const currencyPadding = Math.max((maximum - minimum) * 0.15, Math.abs(maximum) * 0.03, 1);
+    const percentageDomain = format === "percentage" ? calculatePercentageChartDomain(values) : null;
+    const low = percentageDomain?.lower ?? minimum - currencyPadding;
+    const high = percentageDomain?.upper ?? maximum + currencyPadding;
     const range = high - low || 1;
     const points = values.map((value, index) => ({
       x: Math.round(values.length === 1 ? MARGINS.left + plotWidth / 2 : MARGINS.left + (index / (values.length - 1)) * plotWidth),
@@ -60,8 +62,8 @@ export function LineChart({ values, labels, format, metricName, tooltipPrefix, t
       value,
       label: labels[index],
     }));
-    return { minimum, maximum, points, path: points.map((point, index) => `${index === 0 ? "M" : "L"}${point.x} ${point.y}`).join(" ") };
-  }, [labels, values, width]);
+    return { axisMinimum: percentageDomain?.lower ?? minimum, axisMaximum: percentageDomain?.upper ?? maximum, low, high, points, path: points.map((point, index) => `${index === 0 ? "M" : "L"}${point.x} ${point.y}`).join(" ") };
+  }, [format, labels, values, width]);
 
   const active = activeIndex === null ? null : geometry?.points[activeIndex] ?? null;
   const tooltipWidth = Math.min(220, Math.max(170, width - 16));
@@ -72,13 +74,13 @@ export function LineChart({ values, labels, format, metricName, tooltipPrefix, t
   return (
     <div ref={containerRef} className="h-[260px] w-full overflow-hidden" data-chart-measured-width={width || undefined}>
       {geometry ? (
-        <svg width={width} height={CHART_HEIGHT} role="img" aria-describedby={descriptionId} className="block" data-responsive-line-chart="true">
+        <svg width={width} height={CHART_HEIGHT} role="img" aria-describedby={descriptionId} className="block" data-responsive-line-chart="true" data-domain-lower={geometry.low} data-domain-upper={geometry.high}>
           <desc id={descriptionId}>{metricName} from {labels[0]} through {labels.at(-1)}. Focus or tap a point for details.</desc>
           <line x1={MARGINS.left + 0.5} y1={MARGINS.top} x2={MARGINS.left + 0.5} y2={CHART_HEIGHT - MARGINS.bottom} stroke="#e2e8f0" />
           <line x1={MARGINS.left} y1={CHART_HEIGHT - MARGINS.bottom + 0.5} x2={width - MARGINS.right} y2={CHART_HEIGHT - MARGINS.bottom + 0.5} stroke="#e2e8f0" />
           <line x1={MARGINS.left} y1={Math.round((MARGINS.top + CHART_HEIGHT - MARGINS.bottom) / 2) + 0.5} x2={width - MARGINS.right} y2={Math.round((MARGINS.top + CHART_HEIGHT - MARGINS.bottom) / 2) + 0.5} stroke="#f1f5f9" />
-          <text x={6} y={MARGINS.top + 4} fontSize="10" fill="#94a3b8">{formatValue(geometry.maximum, format)}</text>
-          <text x={6} y={CHART_HEIGHT - MARGINS.bottom + 4} fontSize="10" fill="#94a3b8">{formatValue(geometry.minimum, format)}</text>
+          <text x={6} y={MARGINS.top + 4} fontSize="10" fill="#94a3b8">{formatValue(geometry.axisMaximum, format)}</text>
+          <text x={6} y={CHART_HEIGHT - MARGINS.bottom + 4} fontSize="10" fill="#94a3b8">{formatValue(geometry.axisMinimum, format)}</text>
           {active ? <line x1={active.x + 0.5} y1={MARGINS.top} x2={active.x + 0.5} y2={CHART_HEIGHT - MARGINS.bottom} stroke="#94a3b8" strokeDasharray="3 4" /> : null}
           {values.length > 1 ? <path d={geometry.path} fill="none" stroke={lineColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /> : null}
           {geometry.points.map((point, index) => (

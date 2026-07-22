@@ -103,6 +103,10 @@ _Last updated: July 22, 2026_
 - Twelve-point charts display all 12 crisp, angled month labels while retaining
   measured SVG dimensions, clamped interactive tooltips, active markers, and
   guide lines. Live checks found no label intersections at desktop width.
+- Percentage charts derive an independent domain from each displayed series,
+  pad each side by the greater of 20% of the observed range or 0.75 percentage
+  points, and round outward to clean half-point bounds. Currency charts retain
+  their separate period-ending scaling behavior.
 - Permanent chart convention: P&L charts default to R12M values calculated from
   aggregated trailing-12-month dollars, never averages of monthly percentages.
   Monthly P&L trends require explicit selection and labeling; operational and
@@ -111,7 +115,7 @@ _Last updated: July 22, 2026_
   derives KPI totals, aging buckets, customer risk, days past due, collection
   status, and owner insights from invoice due dates and amounts. No age or
   status values are stored in invoice fixtures.
-- `npm run test:financial` passes 33 focused financial-engine, dashboard,
+- `npm run test:financial` passes 35 focused financial-engine, dashboard,
   profitability, Income Statement, AR transformation, and navigation tests.
 - Income Statement financial QC confirms every displayed rolling endpoint uses
   the same service series as Profitability and reconciles Direct Costs,

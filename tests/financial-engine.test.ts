@@ -29,6 +29,7 @@ import {
   buildReceivablesViewModel,
   calculateDaysPastDue,
 } from "../lib/services/prototype-view-models.ts";
+import { calculatePercentageChartDomain } from "../lib/services/chart-domain.ts";
 
 // Synthetic test fixtures verify engine behavior only. They are not approved
 // Volunteer Custom Homes prototype data and are never imported by the app.
@@ -809,4 +810,24 @@ test("defines unique working routes for every application destination", () => {
 
   assert.deepEqual(navItems.map((item) => item.href), expectedRoutes);
   assert.equal(new Set(navItems.map((item) => item.href)).size, expectedRoutes.length);
+});
+
+test("calculates dynamic percentage domains with minimum padding and clean outward rounding", () => {
+  assert.deepEqual(calculatePercentageChartDomain([25.8, 27.4, 29]), { lower: 25, upper: 30 });
+  assert.deepEqual(calculatePercentageChartDomain([14.6, 16.2, 18.2]), { lower: 13.5, upper: 19 });
+  assert.deepEqual(calculatePercentageChartDomain([0, 10]), { lower: -2, upper: 12 });
+  assert.deepEqual(calculatePercentageChartDomain([1.1, 2.3]), { lower: 0, upper: 3.5 });
+
+  const values = [10.2, 10.9];
+  const domain = calculatePercentageChartDomain(values);
+  assert.deepEqual(domain, { lower: 9, upper: 12 });
+  assert.ok(Math.min(...values) - domain.lower >= 0.75);
+  assert.ok(domain.upper - Math.max(...values) >= 0.75);
+  assert.ok((domain.upper - domain.lower) - (Math.max(...values) - Math.min(...values)) >= 1.5);
+});
+
+test("supports negative and flat percentage domains without forcing zero", () => {
+  assert.deepEqual(calculatePercentageChartDomain([-5, -4, -3]), { lower: -6, upper: -2 });
+  assert.deepEqual(calculatePercentageChartDomain([10, 10, 10]), { lower: 9, upper: 11 });
+  assert.deepEqual(calculatePercentageChartDomain([-2, -2]), { lower: -3, upper: -1 });
 });
