@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import type { MonthlyIncomeStatement } from "../data/income-statements.ts";
+import {
+  incomeStatements,
+  type MonthlyIncomeStatement,
+} from "../data/income-statements.ts";
+import { financialPeriods } from "../data/financial-periods.ts";
 import {
   aggregateIncomeStatements,
   calculateMonthlySubtotals,
@@ -233,4 +237,211 @@ test("aggregates only integer-dollar monthly results", () => {
   assert.equal(totals.revenue, 300);
   assert.equal(totals.directCosts, 90);
   assert.equal(totals.grossProfit, 210);
+});
+
+const closedPeriodIds = financialPeriods
+  .filter((period) => period.status === "closed")
+  .map((period) => period.id);
+
+function requireCompleteR12M(endPeriod: string) {
+  const result = calculateR12MProfitability({
+    companyId: "vch",
+    endPeriod,
+    statements: incomeStatements,
+    closedPeriodIds,
+  });
+
+  if (result.status !== "complete") {
+    assert.fail(`Expected ${endPeriod} R12M to be complete.`);
+  }
+
+  return result;
+}
+
+test("contains exactly 24 ordered, closed prototype months", () => {
+  const expectedPeriods = getMonthlyPeriodWindow("2026-06", 24);
+
+  assert.equal(incomeStatements.length, 24);
+  assert.deepEqual(
+    incomeStatements.map((statement) => statement.period),
+    expectedPeriods,
+  );
+  assert.deepEqual(
+    financialPeriods.map((period) => period.id),
+    expectedPeriods,
+  );
+  assert.equal(financialPeriods.every((period) => period.status === "closed"), true);
+  assert.equal(financialPeriods.at(-1)?.id, "2026-06");
+});
+
+test("stores every prototype currency field as integer dollars", () => {
+  for (const statement of incomeStatements) {
+    for (const [field, value] of Object.entries(statement)) {
+      if (field !== "period") {
+        assert.equal(
+          Number.isSafeInteger(value),
+          true,
+          `${statement.period}.${field} must be an integer`,
+        );
+      }
+    }
+  }
+});
+
+test("reconciles the approved prior R12M window", () => {
+  const result = requireCompleteR12M("2025-06");
+
+  assert.deepEqual(result.totals, {
+    revenue: 4_834_000,
+    directCosts: 3_190_440,
+    indirectCosts: 241_700,
+    grossProfit: 1_401_860,
+    overhead: 889_456,
+    operatingProfit: 512_404,
+    otherIncome: 6_000,
+    interestExpense: 30_170,
+    netOtherIncomeExpense: -24_170,
+    netIncome: 488_234,
+  });
+  assert.equal(formatPercentage(result.ratios.grossProfitPercent), "29.0%");
+  assert.equal(formatPercentage(result.ratios.overheadPercent), "18.4%");
+  assert.equal(formatPercentage(result.ratios.operatingProfitPercent), "10.6%");
+  assert.equal(formatPercentage(result.ratios.netOtherIncomeExpensePercent), "-0.5%");
+  assert.equal(formatPercentage(result.ratios.netIncomePercent), "10.1%");
+});
+
+test("reconciles the approved current R12M window", () => {
+  const result = requireCompleteR12M("2026-06");
+
+  assert.deepEqual(result.totals, {
+    revenue: 5_240_000,
+    directCosts: 3_626_080,
+    indirectCosts: 262_000,
+    grossProfit: 1_351_920,
+    overhead: 765_040,
+    operatingProfit: 586_880,
+    otherIncome: 6_000,
+    interestExpense: 47_920,
+    netOtherIncomeExpense: -41_920,
+    netIncome: 544_960,
+  });
+  assert.equal(result.totals.directCosts + result.totals.indirectCosts, 3_888_080);
+  assert.equal(formatPercentage(result.ratios.grossProfitPercent), "25.8%");
+  assert.equal(formatPercentage(result.ratios.overheadPercent), "14.6%");
+  assert.equal(formatPercentage(result.ratios.operatingProfitPercent), "11.2%");
+  assert.equal(formatPercentage(result.ratios.netOtherIncomeExpensePercent), "-0.8%");
+  assert.equal(formatPercentage(result.ratios.netIncomePercent), "10.4%");
+});
+
+test("produces every approved rounded R12M comparison", () => {
+  const prior = requireCompleteR12M("2025-06");
+  const current = requireCompleteR12M("2026-06");
+  const pointChange = (currentValue: number | null, priorValue: number | null) => {
+    assert.notEqual(currentValue, null);
+    assert.notEqual(priorValue, null);
+    return currentValue! - priorValue!;
+  };
+
+  const revenueChange =
+    ((current.totals.revenue - prior.totals.revenue) / prior.totals.revenue) * 100;
+  const overheadPointChange = pointChange(
+    current.ratios.overheadPercent,
+    prior.ratios.overheadPercent,
+  );
+
+  assert.equal(formatPercentage(revenueChange), "8.4%");
+  assert.equal(
+    formatComparisonPoints(
+      pointChange(
+        current.ratios.grossProfitPercent,
+        prior.ratios.grossProfitPercent,
+      ),
+    ),
+    "−3.2 pts",
+  );
+  assert.equal(
+    formatComparisonPoints(overheadPointChange),
+    "−3.8 pts",
+  );
+  assert.ok(overheadPointChange < 0, "Lower Overhead must be favorable.");
+  assert.equal(
+    formatComparisonPoints(
+      pointChange(
+        current.ratios.operatingProfitPercent,
+        prior.ratios.operatingProfitPercent,
+      ),
+    ),
+    "+0.6 pts",
+  );
+  assert.equal(
+    formatComparisonPoints(
+      pointChange(current.ratios.netIncomePercent, prior.ratios.netIncomePercent),
+    ),
+    "+0.3 pts",
+  );
+});
+
+test("matches the approved monthly Gross Profit sequence", () => {
+  const expected = [
+    "29.0%",
+    "29.0%",
+    "28.0%",
+    "27.5%",
+    "28.0%",
+    "27.0%",
+    "26.5%",
+    "26.0%",
+    "26.0%",
+    "25.0%",
+    "23.8%",
+    "22.9%",
+  ];
+  const currentMonths = incomeStatements.slice(12);
+  const actual = currentMonths.map((statement) => {
+    const totals = calculateMonthlySubtotals(statement);
+    return formatPercentage(calculateProfitabilityRatios(totals).grossProfitPercent);
+  });
+
+  assert.deepEqual(actual, expected);
+});
+
+test("models steady monthly Overhead improvement and seasonal revenue", () => {
+  const currentMonths = incomeStatements.slice(12);
+  const overheadSequence = currentMonths.map((statement) => {
+    const totals = calculateMonthlySubtotals(statement);
+    return formatPercentage(calculateProfitabilityRatios(totals).overheadPercent);
+  });
+
+  assert.deepEqual(overheadSequence, [
+    "15.8%",
+    "15.6%",
+    "15.4%",
+    "15.3%",
+    "15.1%",
+    "14.9%",
+    "14.7%",
+    "14.5%",
+    "14.4%",
+    "14.2%",
+    "14.0%",
+    "13.8%",
+  ]);
+  assert.equal(currentMonths[4].period, "2025-11");
+  assert.equal(currentMonths[5].period, "2025-12");
+  assert.ok(currentMonths[5].revenue < currentMonths[4].revenue);
+});
+
+test("monthly prototype subtotals sum exactly to each R12M result", () => {
+  for (const [start, end] of [[0, 12], [12, 24]]) {
+    const months = incomeStatements.slice(start, end);
+    const monthlyTotals = months.map(calculateMonthlySubtotals);
+    const r12m = requireCompleteR12M(end === 12 ? "2025-06" : "2026-06");
+
+    for (const key of Object.keys(r12m.totals) as (keyof typeof r12m.totals)[]) {
+      assert.equal(
+        monthlyTotals.reduce((sum, month) => sum + month[key], 0),
+        r12m.totals[key],
+      );
+    }
+  }
 });

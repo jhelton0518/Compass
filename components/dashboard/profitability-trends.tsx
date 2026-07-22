@@ -69,7 +69,7 @@ export function ProfitabilityTrends() {
             A clear view of margin direction
           </h2>
           <p className="mt-1 text-sm text-slate-500">
-            Rolling 12 months through June 2026.
+            Monthly results from July 2025 through June 2026.
           </p>
         </div>
         <p className="max-w-sm text-sm leading-6 text-slate-500 sm:text-right">

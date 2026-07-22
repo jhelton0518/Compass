@@ -8,7 +8,7 @@ _Last updated: July 22, 2026_
 - Branch: `main`
 - Financial foundation commit: `8f81bec12f4c6e2eb4e7085bc64350eaa5b4589d`
 - Financial foundation commit message: `Working financial data foundation`
-- Current phase: financial engine checkpoint 1 complete
+- Current phase: approved 24-month prototype dataset complete
 
 ## Stack
 
@@ -50,7 +50,12 @@ _Last updated: July 22, 2026_
   zero-revenue ratio handling, and presentation formatters.
 - Focused synthetic-fixture tests cover formulas, missing and open periods,
   zero revenue, signed negative values, formatting, and exact reconciliation.
-- `npm run test:financial` passes 10 focused financial-engine tests.
+- `npm run test:financial` passes 18 focused financial-engine and dataset tests.
+- Financial engine checkpoint 2 replaces the incompatible seed records with
+  24 approved synthetic modeling periods from July 2024 through June 2026.
+- Both current and prior R12M windows reconcile to the approved totals, ratios,
+  and comparisons. July 2025 through June 2026 also reconciles to the approved
+  monthly Gross Profit sequence and steadily improving Overhead percentage.
 - `npm run lint` and `npm run build` pass as of July 22, 2026.
 
 ## Current Application Behavior
@@ -91,7 +96,9 @@ prototype data remain out of scope for this checkpoint.
 - `lib/services/income-statement.ts` exports `getIncomeStatement()` and `getAllIncomeStatements()`.
 - `lib/services/financial-service.ts` now contains the presentation-independent
   calculation engine. It is not wired into the dashboard yet.
-- The repository version of `data/income-statements.ts` currently contains periods July through December 2025. Additional prototype periods should be added only when that work is explicitly in scope.
+- `data/income-statements.ts` contains the approved synthetic prototype model
+  from July 2024 through June 2026. All 24 periods are marked closed in
+  `data/financial-periods.ts`; no prototype period exists after June 2026.
 - A previous failure was caused by moved TypeScript files being saved as zero-byte files. Always confirm files are saved and non-empty before troubleshooting export errors.
 - If stale Turbopack output appears after file changes, delete `.next` and restart the development server.
 
@@ -108,9 +115,9 @@ The initial dashboard UI sequence is complete:
 7. Financial Briefing
 8. Profitability Trends
 
-Financial engine checkpoint 1 is complete. The existing prototype dataset and
-approved dashboard presentation remain unchanged and disconnected from the new
-engine until approved monthly data can reproduce the dashboard values.
+Financial engine checkpoint 2 is complete. The approved monthly dataset now
+reproduces both R12M profiles, but the dashboard remains intentionally static
+and disconnected from the calculation service until the integration checkpoint.
 
 ## UI Direction
 
@@ -151,6 +158,6 @@ The initial analysis priority is:
 
 ## Next Action
 
-Prepare financial engine checkpoint 2: approve and implement the July 2024
-through June 2026 monthly prototype dataset, then validate current and prior
-R12M windows. Do not replace dashboard fixtures until service results reconcile.
+Prepare financial engine checkpoint 3: connect the approved dashboard KPI and
+monthly Profitability Trends presentation to service-layer results. Keep Cash
+static until balance-sheet data is explicitly in scope.

@@ -1,211 +1,53 @@
-export const test = "hello";
 export interface MonthlyIncomeStatement {
-    period: string;
-  
-    revenue: number;
-  
-    labor: number;
-    equipment: number;
-    material: number;
-    subcontractors: number;
-    otherDirectCosts: number;
-  
-    fuel: number;
-    equipmentDepreciation: number;
-    smallTools: number;
-    generalLiability: number;
-    healthInsurance: number;
-  
-    officePayroll: number;
-    payrollTaxes: number;
-    rent: number;
-    utilities: number;
-    marketing: number;
-    it: number;
-    meals: number;
-    travel: number;
-  
-    otherIncome: number;
-    interestExpense: number;
-  }
-  
-  export const incomeStatements: MonthlyIncomeStatement[] = [
-    {
-      period: "2025-07",
-  
-      revenue: 365000,
-  
-      labor: 64000,
-      equipment: 11000,
-      material: 65000,
-      subcontractors: 8500,
-      otherDirectCosts: 10500,
-  
-      fuel: 2500,
-      equipmentDepreciation: 2200,
-      smallTools: 1800,
-      generalLiability: 1700,
-      healthInsurance: 1450,
-  
-      officePayroll: 33000,
-      payrollTaxes: 3200,
-      rent: 2500,
-      utilities: 900,
-      marketing: 1500,
-      it: 800,
-      meals: 450,
-      travel: 900,
-  
-      otherIncome: 200,
-      interestExpense: 700,
-    },
-  
-    {
-      period: "2025-08",
-  
-      revenue: 390000,
-  
-      labor: 69000,
-      equipment: 12000,
-      material: 70000,
-      subcontractors: 9000,
-      otherDirectCosts: 10700,
-  
-      fuel: 2600,
-      equipmentDepreciation: 2200,
-      smallTools: 1800,
-      generalLiability: 1700,
-      healthInsurance: 1450,
-  
-      officePayroll: 33200,
-      payrollTaxes: 3220,
-      rent: 2500,
-      utilities: 900,
-      marketing: 1500,
-      it: 800,
-      meals: 500,
-      travel: 900,
-  
-      otherIncome: 200,
-      interestExpense: 690,
-    },
-  
-    {
-      period: "2025-09",
+  period: string;
+  revenue: number;
+  labor: number;
+  equipment: number;
+  material: number;
+  subcontractors: number;
+  otherDirectCosts: number;
+  fuel: number;
+  equipmentDepreciation: number;
+  smallTools: number;
+  generalLiability: number;
+  healthInsurance: number;
+  officePayroll: number;
+  payrollTaxes: number;
+  rent: number;
+  utilities: number;
+  marketing: number;
+  it: number;
+  meals: number;
+  travel: number;
+  otherIncome: number;
+  interestExpense: number;
+}
 
-    revenue: 410000,
-
-    labor: 74000,
-    equipment: 12500,
-    material: 73500,
-    subcontractors: 9500,
-    otherDirectCosts: 11200,
-
-    fuel: 2650,
-    equipmentDepreciation: 2200,
-    smallTools: 1800,
-    generalLiability: 1700,
-    healthInsurance: 1450,
-
-    officePayroll: 33300,
-    payrollTaxes: 3230,
-    rent: 2500,
-    utilities: 900,
-    marketing: 1450,
-    it: 800,
-    meals: 500,
-    travel: 900,
-
-    otherIncome: 200,
-    interestExpense: 680,
-  },
-
-  {
-    period: "2025-10",
-
-    revenue: 435000,
-
-    labor: 81000,
-    equipment: 13000,
-    material: 79000,
-    subcontractors: 9800,
-    otherDirectCosts: 11600,
-
-    fuel: 2700,
-    equipmentDepreciation: 2200,
-    smallTools: 1800,
-    generalLiability: 1700,
-    healthInsurance: 1450,
-
-    officePayroll: 33400,
-    payrollTaxes: 3240,
-    rent: 2500,
-    utilities: 900,
-    marketing: 1400,
-    it: 800,
-    meals: 500,
-    travel: 900,
-
-    otherIncome: 200,
-    interestExpense: 670,
-  },
-
-  {
-    period: "2025-11",
-
-    revenue: 425000,
-
-    labor: 78000,
-    equipment: 12800,
-    material: 76000,
-    subcontractors: 9700,
-    otherDirectCosts: 11300,
-
-    fuel: 2700,
-    equipmentDepreciation: 2200,
-    smallTools: 1800,
-    generalLiability: 1700,
-    healthInsurance: 1450,
-
-    officePayroll: 33400,
-    payrollTaxes: 3240,
-    rent: 2500,
-    utilities: 900,
-    marketing: 1350,
-    it: 800,
-    meals: 500,
-    travel: 900,
-
-    otherIncome: 200,
-    interestExpense: 660,
-  },
-
-  {
-    period: "2025-12",
-
-    revenue: 355000,
-
-    labor: 67000,
-    equipment: 11500,
-    material: 66000,
-    subcontractors: 8600,
-    otherDirectCosts: 10300,
-
-    fuel: 2600,
-    equipmentDepreciation: 2200,
-    smallTools: 1800,
-    generalLiability: 1700,
-    healthInsurance: 1450,
-
-    officePayroll: 33600,
-    payrollTaxes: 3260,
-    rent: 2500,
-    utilities: 900,
-    marketing: 1300,
-    it: 800,
-    meals: 450,
-    travel: 850,
-
-    otherIncome: 200,
-    interestExpense: 650,
-  },];
+// Approved Volunteer Custom Homes prototype modeling data. These records are
+// synthetic and are not representations of actual company financial results.
+export const incomeStatements: MonthlyIncomeStatement[] = [
+  { period: "2024-07", revenue: 340000, labor: 44880, equipment: 11220, material: 85272, subcontractors: 71808, otherDirectCosts: 11220, fuel: 4250, equipmentDepreciation: 4250, smallTools: 2550, generalLiability: 3400, healthInsurance: 2550, officePayroll: 37536, payrollTaxes: 5004, rent: 5004, utilities: 1876, marketing: 5004, it: 3128, meals: 1876, travel: 3132, otherIncome: 500, interestExpense: 2200 },
+  { period: "2024-08", revenue: 360000, labor: 47520, equipment: 11880, material: 90288, subcontractors: 76032, otherDirectCosts: 11880, fuel: 4500, equipmentDepreciation: 4500, smallTools: 2700, generalLiability: 3600, healthInsurance: 2700, officePayroll: 39744, payrollTaxes: 5299, rent: 5299, utilities: 1987, marketing: 5299, it: 3312, meals: 1987, travel: 3313, otherIncome: 500, interestExpense: 2250 },
+  { period: "2024-09", revenue: 380000, labor: 50160, equipment: 12540, material: 95304, subcontractors: 80256, otherDirectCosts: 12540, fuel: 4750, equipmentDepreciation: 4750, smallTools: 2850, generalLiability: 3800, healthInsurance: 2850, officePayroll: 41952, payrollTaxes: 5593, rent: 5593, utilities: 2097, marketing: 5593, it: 3496, meals: 2097, travel: 3499, otherIncome: 500, interestExpense: 2300 },
+  { period: "2024-10", revenue: 400000, labor: 52800, equipment: 13200, material: 100320, subcontractors: 84480, otherDirectCosts: 13200, fuel: 5000, equipmentDepreciation: 5000, smallTools: 3000, generalLiability: 4000, healthInsurance: 3000, officePayroll: 44160, payrollTaxes: 5888, rent: 5888, utilities: 2208, marketing: 5888, it: 3680, meals: 2208, travel: 3680, otherIncome: 500, interestExpense: 2350 },
+  { period: "2024-11", revenue: 370000, labor: 48840, equipment: 12210, material: 92796, subcontractors: 78144, otherDirectCosts: 12210, fuel: 4625, equipmentDepreciation: 4625, smallTools: 2775, generalLiability: 3700, healthInsurance: 2775, officePayroll: 40848, payrollTaxes: 5446, rent: 5446, utilities: 2042, marketing: 5446, it: 3404, meals: 2042, travel: 3406, otherIncome: 500, interestExpense: 2400 },
+  { period: "2024-12", revenue: 290000, labor: 38280, equipment: 9570, material: 72732, subcontractors: 61248, otherDirectCosts: 9570, fuel: 3625, equipmentDepreciation: 3625, smallTools: 2175, generalLiability: 2900, healthInsurance: 2175, officePayroll: 32016, payrollTaxes: 4268, rent: 4268, utilities: 1600, marketing: 4268, it: 2668, meals: 1600, travel: 2672, otherIncome: 500, interestExpense: 2450 },
+  { period: "2025-01", revenue: 340000, labor: 44880, equipment: 11220, material: 85272, subcontractors: 71808, otherDirectCosts: 11220, fuel: 4250, equipmentDepreciation: 4250, smallTools: 2550, generalLiability: 3400, healthInsurance: 2550, officePayroll: 37536, payrollTaxes: 5004, rent: 5004, utilities: 1876, marketing: 5004, it: 3128, meals: 1876, travel: 3132, otherIncome: 500, interestExpense: 2450 },
+  { period: "2025-02", revenue: 360000, labor: 47520, equipment: 11880, material: 90288, subcontractors: 76032, otherDirectCosts: 11880, fuel: 4500, equipmentDepreciation: 4500, smallTools: 2700, generalLiability: 3600, healthInsurance: 2700, officePayroll: 39744, payrollTaxes: 5299, rent: 5299, utilities: 1987, marketing: 5299, it: 3312, meals: 1987, travel: 3313, otherIncome: 500, interestExpense: 2500 },
+  { period: "2025-03", revenue: 390000, labor: 51480, equipment: 12870, material: 97812, subcontractors: 82368, otherDirectCosts: 12870, fuel: 4875, equipmentDepreciation: 4875, smallTools: 2925, generalLiability: 3900, healthInsurance: 2925, officePayroll: 43056, payrollTaxes: 5740, rent: 5740, utilities: 2152, marketing: 5740, it: 3588, meals: 2152, travel: 3592, otherIncome: 500, interestExpense: 2500 },
+  { period: "2025-04", revenue: 470000, labor: 62040, equipment: 15510, material: 117876, subcontractors: 99264, otherDirectCosts: 15510, fuel: 5875, equipmentDepreciation: 5875, smallTools: 3525, generalLiability: 4700, healthInsurance: 3525, officePayroll: 51888, payrollTaxes: 6918, rent: 6918, utilities: 2594, marketing: 6918, it: 4324, meals: 2594, travel: 4326, otherIncome: 500, interestExpense: 2550 },
+  { period: "2025-05", revenue: 510000, labor: 67320, equipment: 16830, material: 127908, subcontractors: 107712, otherDirectCosts: 16830, fuel: 6375, equipmentDepreciation: 6375, smallTools: 3825, generalLiability: 5100, healthInsurance: 3825, officePayroll: 56304, payrollTaxes: 7507, rent: 7507, utilities: 2815, marketing: 7507, it: 4692, meals: 2815, travel: 4693, otherIncome: 500, interestExpense: 2600 },
+  { period: "2025-06", revenue: 624000, labor: 82368, equipment: 20592, material: 156499, subcontractors: 131788, otherDirectCosts: 20593, fuel: 7800, equipmentDepreciation: 7800, smallTools: 4680, generalLiability: 6240, healthInsurance: 4680, officePayroll: 68889, payrollTaxes: 9185, rent: 9185, utilities: 3444, marketing: 9185, it: 5740, meals: 3444, travel: 5744, otherIncome: 500, interestExpense: 3620 },
+  { period: "2025-07", revenue: 280000, labor: 36960, equipment: 9240, material: 70224, subcontractors: 59136, otherDirectCosts: 9240, fuel: 3500, equipmentDepreciation: 3500, smallTools: 2100, generalLiability: 2800, healthInsurance: 2100, officePayroll: 26604, payrollTaxes: 3547, rent: 3547, utilities: 1330, marketing: 3547, it: 2217, meals: 1330, travel: 2218, otherIncome: 500, interestExpense: 3500 },
+  { period: "2025-08", revenue: 300000, labor: 39600, equipment: 9900, material: 75240, subcontractors: 63360, otherDirectCosts: 9900, fuel: 3750, equipmentDepreciation: 3750, smallTools: 2250, generalLiability: 3000, healthInsurance: 2250, officePayroll: 28140, payrollTaxes: 3752, rent: 3752, utilities: 1407, marketing: 3752, it: 2345, meals: 1407, travel: 2345, otherIncome: 500, interestExpense: 3600 },
+  { period: "2025-09", revenue: 330000, labor: 44220, equipment: 11055, material: 84018, subcontractors: 70752, otherDirectCosts: 11055, fuel: 4125, equipmentDepreciation: 4125, smallTools: 2475, generalLiability: 3300, healthInsurance: 2475, officePayroll: 30552, payrollTaxes: 4073, rent: 4073, utilities: 1527, marketing: 4073, it: 2546, meals: 1527, travel: 2549, otherIncome: 500, interestExpense: 3700 },
+  { period: "2025-10", revenue: 350000, labor: 47250, equipment: 11812, material: 89775, subcontractors: 75600, otherDirectCosts: 11813, fuel: 4375, equipmentDepreciation: 4375, smallTools: 2625, generalLiability: 3500, healthInsurance: 2625, officePayroll: 32190, payrollTaxes: 4292, rent: 4292, utilities: 1609, marketing: 4292, it: 2682, meals: 1609, travel: 2684, otherIncome: 500, interestExpense: 3800 },
+  { period: "2025-11", revenue: 340000, labor: 45560, equipment: 11390, material: 86564, subcontractors: 72896, otherDirectCosts: 11390, fuel: 4250, equipmentDepreciation: 4250, smallTools: 2550, generalLiability: 3400, healthInsurance: 2550, officePayroll: 30864, payrollTaxes: 4115, rent: 4115, utilities: 1543, marketing: 4115, it: 2572, meals: 1543, travel: 2573, otherIncome: 500, interestExpense: 3900 },
+  { period: "2025-12", revenue: 240000, labor: 32640, equipment: 8160, material: 62016, subcontractors: 52224, otherDirectCosts: 8160, fuel: 3000, equipmentDepreciation: 3000, smallTools: 1800, generalLiability: 2400, healthInsurance: 1800, officePayroll: 21516, payrollTaxes: 2868, rent: 2868, utilities: 1075, marketing: 2868, it: 1793, meals: 1075, travel: 1797, otherIncome: 500, interestExpense: 4000 },
+  { period: "2026-01", revenue: 330000, labor: 45210, equipment: 11302, material: 85899, subcontractors: 72336, otherDirectCosts: 11303, fuel: 4125, equipmentDepreciation: 4125, smallTools: 2475, generalLiability: 3300, healthInsurance: 2475, officePayroll: 29166, payrollTaxes: 3888, rent: 3888, utilities: 1458, marketing: 3888, it: 2430, meals: 1458, travel: 2434, otherIncome: 500, interestExpense: 4000 },
+  { period: "2026-02", revenue: 360000, labor: 49680, equipment: 12420, material: 94392, subcontractors: 79488, otherDirectCosts: 12420, fuel: 4500, equipmentDepreciation: 4500, smallTools: 2700, generalLiability: 3600, healthInsurance: 2700, officePayroll: 31380, payrollTaxes: 4184, rent: 4184, utilities: 1569, marketing: 4184, it: 2615, meals: 1569, travel: 2615, otherIncome: 500, interestExpense: 4000 },
+  { period: "2026-03", revenue: 450000, labor: 62100, equipment: 15525, material: 117990, subcontractors: 99360, otherDirectCosts: 15525, fuel: 5625, equipmentDepreciation: 5625, smallTools: 3375, generalLiability: 4500, healthInsurance: 3375, officePayroll: 38940, payrollTaxes: 5192, rent: 5192, utilities: 1947, marketing: 5192, it: 3245, meals: 1947, travel: 3245, otherIncome: 500, interestExpense: 4100 },
+  { period: "2026-04", revenue: 600000, labor: 84000, equipment: 21000, material: 159600, subcontractors: 134400, otherDirectCosts: 21000, fuel: 7500, equipmentDepreciation: 7500, smallTools: 4500, generalLiability: 6000, healthInsurance: 4500, officePayroll: 51180, payrollTaxes: 6824, rent: 6824, utilities: 2559, marketing: 6824, it: 4265, meals: 2559, travel: 4265, otherIncome: 500, interestExpense: 4200 },
+  { period: "2026-05", revenue: 760000, labor: 108224, equipment: 27056, material: 205625, subcontractors: 173158, otherDirectCosts: 27057, fuel: 9500, equipmentDepreciation: 9500, smallTools: 5700, generalLiability: 7600, healthInsurance: 5700, officePayroll: 63900, payrollTaxes: 8520, rent: 8520, utilities: 3195, marketing: 8520, it: 5325, meals: 3195, travel: 5325, otherIncome: 500, interestExpense: 4400 },
+  { period: "2026-06", revenue: 900000, labor: 129772, equipment: 32443, material: 246566, subcontractors: 207635, otherDirectCosts: 32444, fuel: 11250, equipmentDepreciation: 11250, smallTools: 6750, generalLiability: 9000, healthInsurance: 6750, officePayroll: 74592, payrollTaxes: 9945, rent: 9945, utilities: 3729, marketing: 9945, it: 6216, meals: 3729, travel: 6219, otherIncome: 500, interestExpense: 4720 },
+];
