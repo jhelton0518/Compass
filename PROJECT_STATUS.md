@@ -1,6 +1,6 @@
 # Compass Project Status
 
-_Last updated: July 21, 2026_
+_Last updated: July 22, 2026_
 
 ## Checkpoint
 
@@ -8,7 +8,7 @@ _Last updated: July 21, 2026_
 - Branch: `main`
 - Financial foundation commit: `8f81bec12f4c6e2eb4e7085bc64350eaa5b4589d`
 - Financial foundation commit message: `Working financial data foundation`
-- Current phase: dashboard foundation complete
+- Current phase: dashboard profitability trends complete
 
 ## Stack
 
@@ -35,16 +35,24 @@ _Last updated: July 21, 2026_
 - The dashboard header includes the Volunteer Custom Homes company selector and
   an "As of June 2026" reporting-period control.
 - The dashboard overview presents five static KPI cards for Revenue, Gross
-  Profit, Operating Profit, Net Income, and Cash.
+  Profit %, Overhead % of Revenue, Net Income %, and Cash. The Overhead card
+  treats a lower percentage as favorable and reinforces improving discipline.
 - The Financial Briefing presents a static, owner-focused summary of growth,
   gross margin pressure, improved Overhead discipline, and tight cash.
-- `npm run lint` and `npm run build` pass as of July 21, 2026.
+- The Profitability Trends section presents the approved rolling 12-month
+  direction for Gross Profit %, Overhead % of Revenue, Operating Profit %, and
+  Net Income % without introducing new financial values or calculations.
+- The approved profitability values reconcile as Gross Profit 25.8% less
+  Overhead 14.6% equals Operating Profit 11.2%; less Net Other Expense 0.8%
+  equals Net Income 10.4%.
+- `npm run lint` and `npm run build` pass as of July 22, 2026.
 
 ## Current Application Behavior
 
 `app/page.tsx` renders the Compass application shell with the dashboard header
 and dashboard content. The dashboard currently includes five static KPI cards
-and the approved static Financial Briefing beneath them.
+and the approved static Financial Briefing, followed by the presentation-only
+Profitability Trends section.
 
 The current UI is intentionally static. Calculations, analytics wiring, and new
 prototype data remain out of scope for this checkpoint.
@@ -91,9 +99,11 @@ The initial dashboard UI sequence is complete:
 5. Dashboard layout
 6. Five-card KPI overview
 7. Financial Briefing
+8. Profitability Trends
 
-Continue building one isolated UI feature at a time without redesigning the
-financial foundation or adding calculations unless explicitly requested.
+The Profitability Trends objective is complete. Continue building one isolated
+UI feature at a time without redesigning the financial foundation or adding
+calculations unless explicitly requested.
 
 ## UI Direction
 
@@ -134,6 +144,6 @@ The initial analysis priority is:
 
 ## Next Action
 
-Review the completed dashboard checkpoint and select the next isolated Compass
-UI feature. Do not add calculations, analytics wiring, or new prototype data
-until that work is explicitly in scope.
+Review the completed Profitability Trends checkpoint and select the next
+isolated Compass UI feature. Do not add calculations, analytics wiring, or new
+prototype data until that work is explicitly in scope.

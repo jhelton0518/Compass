@@ -1,13 +1,14 @@
 import {
-  BadgeDollarSign,
   Banknote,
   CircleDollarSign,
   Landmark,
+  ShieldCheck,
   TrendingUp,
 } from "lucide-react";
 
 import { MetricCard } from "./metric-card";
 import { FinancialBriefing } from "./financial-briefing";
+import { ProfitabilityTrends } from "./profitability-trends";
 
 const metrics = [
   {
@@ -22,7 +23,7 @@ const metrics = [
     featured: true,
   },
   {
-    label: "Gross Profit",
+    label: "Gross Profit %",
     value: "25.8%",
     context: "$1.35M gross profit",
     change: "−3.2 pts",
@@ -32,17 +33,17 @@ const metrics = [
     chartPath: "M4 10 C17 11, 21 15, 33 13 S51 21, 61 20 S78 28, 92 30",
   },
   {
-    label: "Operating Profit",
-    value: "11.2%",
-    context: "$587K operating profit",
-    change: "+0.6 pts",
+    label: "Overhead % of Revenue",
+    value: "14.6%",
+    context: "Overhead discipline is improving",
+    change: "−3.8 pts",
     changeLabel: "vs. prior 12 months",
     trend: "positive" as const,
-    icon: BadgeDollarSign,
-    chartPath: "M4 27 C15 25, 23 29, 33 24 S49 23, 60 20 S78 16, 92 17",
+    icon: ShieldCheck,
+    chartPath: "M4 10 C17 12, 23 9, 34 15 S50 18, 61 20 S78 27, 92 29",
   },
   {
-    label: "Net Income",
+    label: "Net Income %",
     value: "10.4%",
     context: "$545K net income",
     change: "+0.3 pts",
@@ -99,6 +100,7 @@ export function DashboardContent() {
       </div>
 
       <FinancialBriefing />
+      <ProfitabilityTrends />
     </section>
   );
 }
