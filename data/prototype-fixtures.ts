@@ -5,7 +5,6 @@ export const liquidityFixture = {
   cash: 418_000,
   workingCapital: 612_000,
   currentRatio: 1.89,
-  runwayMonths: 2.8,
   cashTrend: [512000, 486000, 459000, 447000, 431000, 418000],
   cashTrendLabels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
   currentAssets: [

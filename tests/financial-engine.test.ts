@@ -30,6 +30,10 @@ import {
   calculateDaysPastDue,
 } from "../lib/services/prototype-view-models.ts";
 import { calculatePercentageChartDomain } from "../lib/services/chart-domain.ts";
+import { volunteerCustomHomesBalanceSheetRecords, volunteerCustomHomesOpeningEquityAnchor } from "../data/balance-sheet-records.ts";
+import { balanceSheetReportingCategories } from "../data/balance-sheet-reporting-categories.ts";
+import { volunteerCustomHomesBalanceSheetAccountMappings } from "../data/account-mappings.ts";
+import { calculateBalanceSheet, calculateCurrentFiscalYearNetIncome, calculateLiquidityMetrics } from "../lib/services/balance-sheet-service.ts";
 
 // Synthetic test fixtures verify engine behavior only. They are not approved
 // Volunteer Custom Homes prototype data and are never imported by the app.
@@ -830,4 +834,94 @@ test("supports negative and flat percentage domains without forcing zero", () =>
   assert.deepEqual(calculatePercentageChartDomain([-5, -4, -3]), { lower: -6, upper: -2 });
   assert.deepEqual(calculatePercentageChartDomain([10, 10, 10]), { lower: 9, upper: 11 });
   assert.deepEqual(calculatePercentageChartDomain([-2, -2]), { lower: -3, upper: -1 });
+});
+
+const balanceSheetRequest = (period: string) => ({ companyId: "vch", period, records: volunteerCustomHomesBalanceSheetRecords, statements: incomeStatements, periods: financialPeriods, mappings: volunteerCustomHomesBalanceSheetAccountMappings, categories: balanceSheetReportingCategories, openingEquityAnchor: volunteerCustomHomesOpeningEquityAnchor, fiscalYearEndMonth: 12 });
+
+function requireCompleteBalanceSheet(period: string) {
+  const result = calculateBalanceSheet(balanceSheetRequest(period));
+  if (result.status !== "complete") assert.fail(`Expected ${period} Balance Sheet to be complete.`);
+  return result;
+}
+
+test("defines the complete mapped VCH Balance Sheet account hierarchy", () => {
+  assert.equal(balanceSheetReportingCategories.length, 17);
+  assert.equal(volunteerCustomHomesBalanceSheetAccountMappings.length, 17);
+  assert.equal(new Set(volunteerCustomHomesBalanceSheetAccountMappings.map((mapping) => mapping.glAccountId)).size, 17);
+  assert.equal(balanceSheetReportingCategories.find((category) => category.id === "bs-accumulated-depreciation")?.behavior, "contra-asset");
+  assert.equal(balanceSheetReportingCategories.find((category) => category.id === "bs-owner-distributions")?.behavior, "contra-equity");
+  assert.equal(balanceSheetReportingCategories.find((category) => category.id === "bs-other-current-assets")?.liquidityClassification, "non-quick-current-asset");
+  assert.equal(balanceSheetReportingCategories.find((category) => category.id === "bs-current-net-income")?.isCalculated, true);
+});
+
+test("contains 24 ordered monthly period-ending Balance Sheet records", () => {
+  assert.equal(volunteerCustomHomesBalanceSheetRecords.length, 24);
+  assert.deepEqual(volunteerCustomHomesBalanceSheetRecords.map((record) => record.period), getMonthlyPeriodWindow("2026-06", 24));
+  for (const record of volunteerCustomHomesBalanceSheetRecords) {
+    assert.equal(record.balances.length, 16, "Current Fiscal-Year Net Income must be calculated, not stored.");
+    assert.equal(record.balances.every((balance) => Number.isSafeInteger(balance.endingBalance)), true);
+    assert.equal(record.balances.some((balance) => balance.glAccountId === "gl-3300"), false);
+  }
+});
+
+test("balances every monthly endpoint exactly and returns period changes", () => {
+  for (const record of volunteerCustomHomesBalanceSheetRecords) {
+    const result = requireCompleteBalanceSheet(record.period);
+    assert.equal(result.totalAssets, result.liabilitiesAndEquity, record.period);
+    assert.equal(result.accountingEquationDifference, 0, record.period);
+  }
+  const june = requireCompleteBalanceSheet("2026-06");
+  assert.equal(june.changes["bs-cash"], -13_000);
+  assert.equal(june.changes["bs-ar"], 22_000);
+});
+
+test("rolls classifications, contra assets, and owner distributions correctly", () => {
+  const june = requireCompleteBalanceSheet("2026-06");
+  const line = (id: string) => june.lines.find((item) => item.reportingCategoryId === id)!.amount;
+  assert.equal(line("bs-equipment"), 1_590_000);
+  assert.equal(line("bs-accumulated-depreciation"), -540_000);
+  assert.equal(june.totalNonCurrentAssets, 1_100_000);
+  assert.equal(june.totalCurrentAssets + june.totalNonCurrentAssets, june.totalAssets);
+  assert.equal(june.totalCurrentLiabilities + june.totalNonCurrentLiabilities, june.totalLiabilities);
+  assert.ok(line("bs-owner-distributions") < 0);
+  assert.equal(june.totalEquity, line("bs-owner-contributions") + line("bs-owner-distributions") + line("bs-retained-earnings") + line("bs-current-net-income"));
+});
+
+test("derives current-year Net Income and closes it into retained earnings in January", () => {
+  for (const period of getMonthlyPeriodWindow("2026-06", 24)) {
+    const calculated = calculateCurrentFiscalYearNetIncome({ companyId: "vch", period, fiscalYearEndMonth: 12, statements: incomeStatements, openingEquityAnchor: volunteerCustomHomesOpeningEquityAnchor });
+    if (calculated.status !== "complete") assert.fail(`Expected ${period} current-year income.`);
+    assert.equal(requireCompleteBalanceSheet(period).lines.find((line) => line.reportingCategoryId === "bs-current-net-income")?.amount, calculated.amount);
+  }
+  const amount = (period: string, id: string) => requireCompleteBalanceSheet(period).lines.find((line) => line.reportingCategoryId === id)!.amount;
+  assert.equal(amount("2025-01", "bs-retained-earnings"), amount("2024-12", "bs-retained-earnings") + amount("2024-12", "bs-current-net-income"));
+  assert.equal(amount("2026-01", "bs-retained-earnings"), amount("2025-12", "bs-retained-earnings") + amount("2025-12", "bs-current-net-income"));
+  assert.equal(amount("2025-01", "bs-current-net-income"), calculateMonthlySubtotals(incomeStatements.find((statement) => statement.period === "2025-01")!).netIncome);
+  assert.equal(amount("2026-01", "bs-current-net-income"), calculateMonthlySubtotals(incomeStatements.find((statement) => statement.period === "2026-01")!).netIncome);
+});
+
+test("reconciles every approved June Balance Sheet and liquidity anchor", () => {
+  const june = requireCompleteBalanceSheet("2026-06");
+  assert.deepEqual(june.components, { cash: 418_000, accountsReceivable: 782_000, otherCurrentAssets: 96_000, accountsPayable: 524_000, creditCards: 118_000, otherCurrentLiabilities: 42_000 });
+  assert.equal(june.totalCurrentAssets, 1_296_000);
+  assert.equal(june.totalCurrentLiabilities, 684_000);
+  assert.equal(june.liquidity.workingCapital, 612_000);
+  assert.equal(june.liquidity.currentRatio, 1.894736842105263);
+  assert.equal(june.liquidity.quickAssets, 1_200_000);
+  assert.equal(june.liquidity.quickRatio, 1.7543859649122806);
+  assert.equal(june.liquidity.quickAssets, june.components.cash + june.components.accountsReceivable);
+});
+
+test("uses historical endpoint balances rather than aggregating them as R12M", () => {
+  const july = requireCompleteBalanceSheet("2024-07");
+  const june = requireCompleteBalanceSheet("2026-06");
+  assert.equal(july.components.cash, 620_000);
+  assert.equal(july.changes["bs-cash"], null);
+  assert.equal(june.components.cash, 418_000);
+  const summedCash = volunteerCustomHomesBalanceSheetRecords.slice(-12).reduce((sum, record) => sum + record.balances.find((balance) => balance.glAccountId === "gl-1000")!.endingBalance, 0);
+  assert.notEqual(june.components.cash, summedCash);
+});
+
+test("returns explicit unavailable liquidity ratios for zero current liabilities", () => {
+  assert.deepEqual(calculateLiquidityMetrics(100_000, 0, 75_000), { workingCapital: 100_000, currentRatio: null, quickAssets: 75_000, quickRatio: null, unavailableReason: "zero-current-liabilities" });
 });

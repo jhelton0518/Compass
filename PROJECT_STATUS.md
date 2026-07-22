@@ -115,12 +115,28 @@ _Last updated: July 22, 2026_
   derives KPI totals, aging buckets, customer risk, days past due, collection
   status, and owner insights from invoice due dates and amounts. No age or
   status values are stored in invoice fixtures.
-- `npm run test:financial` passes 35 focused financial-engine, dashboard,
+- `npm run test:financial` passes 43 focused financial-engine, dashboard,
   profitability, Income Statement, AR transformation, and navigation tests.
 - Income Statement financial QC confirms every displayed rolling endpoint uses
   the same service series as Profitability and reconciles Direct Costs,
   Indirect Costs, Gross Profit, Overhead, Operating Profit, signed net Other
   Income/Expense, and Net Income from aggregated trailing-12-month dollars.
+- The authoritative Balance Sheet foundation defines current and non-current
+  Assets and Liabilities, Equity, contra accounts, liquidity classifications,
+  period-ending account balances, statement outputs, and AR/AP aging contracts.
+- Volunteer Custom Homes has 24 ordered, exactly balanced monthly Balance Sheet
+  endpoints from July 2024 through June 2026 using the permanent GL accounts to
+  reporting categories to major financial categories hierarchy.
+- June 2026 reconciles to Cash $418,000, Accounts Receivable $782,000, Other
+  Current Assets $96,000, Accounts Payable $524,000, Credit Cards $118,000,
+  Other Current Liabilities $42,000, Working Capital $612,000, Current Ratio
+  1.8947368421, Quick Assets $1,200,000, and Quick Ratio 1.7543859649.
+- Current Fiscal-Year Net Income is calculated from authoritative monthly Income
+  Statements. The June 2024 equity anchor supports the initial partial year;
+  each January closes the prior calendar year's result into Retained Earnings
+  without storing or double-counting current-year income.
+- Cash Runway has been removed and is deferred until a supported cash-flow
+  denominator exists.
 
 ## Current Application Behavior
 
@@ -170,6 +186,9 @@ analysis lives on purpose-built pages rather than duplicating Dashboard content.
 - `data/income-statements.ts` contains the approved synthetic prototype model
   from July 2024 through June 2026. All 24 periods are marked closed in
   `data/financial-periods.ts`; no prototype period exists after June 2026.
+- `data/balance-sheet-records.ts` contains period-ending Balance Sheet records,
+  not R12M values. `lib/services/balance-sheet-service.ts` is the authoritative
+  aggregation, equation, change, Working Capital, and liquidity-ratio service.
 - Live browser verification at desktop width confirms sharp chart rendering,
   distinct final-period labels, visible Profitability and Cash tooltips, and
   access to June 2026 plus R12M Total through the Income Statement table's own
@@ -233,6 +252,7 @@ The initial analysis priority is:
 
 ## Next Action
 
-Begin the next financial-foundation milestone: add and reconcile balance-sheet
-data before replacing the isolated Cash, working-capital, AR, or AP fixtures or
-enabling Balance Sheet and Cash Flow statements.
+Begin Balance Sheet UI integration: connect the Cash and Working Capital page,
+Dashboard Cash KPI, and Financial Statements Balance Sheet view to the new
+authoritative service before replacing operational AR/AP fixtures. Cash Flow
+remains deferred.

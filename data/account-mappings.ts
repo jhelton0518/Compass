@@ -1,4 +1,4 @@
-import { AccountMapping } from "../app/types/finance";
+import type { AccountMapping } from "../app/types/finance.ts";
 
 export const volunteerCustomHomesAccountMappings: AccountMapping[] = [
   // Revenue
@@ -94,4 +94,24 @@ export const volunteerCustomHomesAccountMappings: AccountMapping[] = [
     glAccountId: "gl-9000",
     reportingCategoryId: "oe-interest-expense",
   },
+];
+
+export const volunteerCustomHomesBalanceSheetAccountMappings: AccountMapping[] = [
+  { glAccountId: "gl-1000", reportingCategoryId: "bs-cash" },
+  { glAccountId: "gl-1100", reportingCategoryId: "bs-ar" },
+  { glAccountId: "gl-1200", reportingCategoryId: "bs-other-current-assets" },
+  { glAccountId: "gl-1500", reportingCategoryId: "bs-equipment" },
+  { glAccountId: "gl-1510", reportingCategoryId: "bs-accumulated-depreciation" },
+  { glAccountId: "gl-1600", reportingCategoryId: "bs-other-long-term-assets" },
+  { glAccountId: "gl-2000", reportingCategoryId: "bs-ap" },
+  { glAccountId: "gl-2100", reportingCategoryId: "bs-credit-cards" },
+  { glAccountId: "gl-2200", reportingCategoryId: "bs-accrued-expenses" },
+  { glAccountId: "gl-2300", reportingCategoryId: "bs-current-debt" },
+  { glAccountId: "gl-2400", reportingCategoryId: "bs-line-of-credit" },
+  { glAccountId: "gl-2500", reportingCategoryId: "bs-other-current-liabilities" },
+  { glAccountId: "gl-2700", reportingCategoryId: "bs-long-term-debt" },
+  { glAccountId: "gl-3000", reportingCategoryId: "bs-owner-contributions" },
+  { glAccountId: "gl-3100", reportingCategoryId: "bs-owner-distributions" },
+  { glAccountId: "gl-3200", reportingCategoryId: "bs-retained-earnings" },
+  { glAccountId: "gl-3300", reportingCategoryId: "bs-current-net-income" },
 ];
