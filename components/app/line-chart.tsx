@@ -6,7 +6,7 @@ import { calculatePercentageChartDomain } from "../../lib/services/chart-domain"
 type LineChartProps = {
   values: number[];
   labels: string[];
-  format: "percentage" | "currency";
+  format: "percentage" | "currency" | "ratio";
   metricName: string;
   tooltipPrefix: string;
   tone?: "blue" | "green";
@@ -17,6 +17,7 @@ const MARGINS = { top: 18, right: 18, bottom: 76, left: 58 };
 
 function formatValue(value: number, format: LineChartProps["format"]) {
   if (format === "percentage") return `${value.toFixed(1)}%`;
+  if (format === "ratio") return `${value.toFixed(2)}×`;
   const magnitude = Math.abs(value);
   const sign = value < 0 ? "−" : "";
   if (magnitude >= 1_000_000) return `${sign}$${(magnitude / 1_000_000).toFixed(2)}M`;
@@ -27,6 +28,12 @@ function formatValue(value: number, format: LineChartProps["format"]) {
 function axisLabel(label: string) {
   const match = /^(\w{3,9})\s+(\d{4})$/.exec(label);
   return match ? `${match[1].slice(0, 3)} ${match[2].slice(2)}` : label;
+}
+
+function tickIndexes(length: number, plotWidth: number) {
+  if (length <= 12) return Array.from({ length }, (_, index) => index);
+  const count = Math.max(2, Math.min(12, Math.floor(plotWidth / 65)));
+  return Array.from(new Set(Array.from({ length: count }, (_, index) => Math.round(index * (length - 1) / (count - 1)))));
 }
 
 export function LineChart({ values, labels, format, metricName, tooltipPrefix, tone = "blue" }: LineChartProps) {
@@ -53,8 +60,10 @@ export function LineChart({ values, labels, format, metricName, tooltipPrefix, t
     const maximum = Math.max(...values);
     const currencyPadding = Math.max((maximum - minimum) * 0.15, Math.abs(maximum) * 0.03, 1);
     const percentageDomain = format === "percentage" ? calculatePercentageChartDomain(values) : null;
-    const low = percentageDomain?.lower ?? minimum - currencyPadding;
-    const high = percentageDomain?.upper ?? maximum + currencyPadding;
+    const ratioPadding = Math.max((maximum - minimum) * 0.2, 0.05);
+    const ratioDomain = format === "ratio" ? { lower: Math.floor((minimum - ratioPadding) * 20) / 20, upper: Math.ceil((maximum + ratioPadding) * 20) / 20 } : null;
+    const low = percentageDomain?.lower ?? ratioDomain?.lower ?? minimum - currencyPadding;
+    const high = percentageDomain?.upper ?? ratioDomain?.upper ?? maximum + currencyPadding;
     const range = high - low || 1;
     const points = values.map((value, index) => ({
       x: Math.round(values.length === 1 ? MARGINS.left + plotWidth / 2 : MARGINS.left + (index / (values.length - 1)) * plotWidth),
@@ -62,7 +71,7 @@ export function LineChart({ values, labels, format, metricName, tooltipPrefix, t
       value,
       label: labels[index],
     }));
-    return { axisMinimum: percentageDomain?.lower ?? minimum, axisMaximum: percentageDomain?.upper ?? maximum, low, high, points, path: points.map((point, index) => `${index === 0 ? "M" : "L"}${point.x} ${point.y}`).join(" ") };
+    return { axisMinimum: percentageDomain?.lower ?? ratioDomain?.lower ?? minimum, axisMaximum: percentageDomain?.upper ?? ratioDomain?.upper ?? maximum, low, high, points, tickIndexes: tickIndexes(values.length, plotWidth), path: points.map((point, index) => `${index === 0 ? "M" : "L"}${point.x} ${point.y}`).join(" ") };
   }, [format, labels, values, width]);
 
   const active = activeIndex === null ? null : geometry?.points[activeIndex] ?? null;
@@ -100,7 +109,7 @@ export function LineChart({ values, labels, format, metricName, tooltipPrefix, t
               <circle cx={point.x} cy={point.y} r={activeIndex === index ? 6 : 4} fill={activeIndex === index ? "white" : lineColor} stroke={lineColor} strokeWidth={activeIndex === index ? 3 : 1.5} />
             </g>
           ))}
-          {geometry.points.map((point, index) => <text key={`tick-${index}`} x={point.x} y={CHART_HEIGHT - MARGINS.bottom + 16} textAnchor="end" dominantBaseline="middle" transform={`rotate(-40 ${point.x} ${CHART_HEIGHT - MARGINS.bottom + 16})`} fontSize="10" fill="#64748b">{axisLabel(point.label)}</text>)}
+          {geometry.tickIndexes.map((index) => { const point = geometry.points[index]; return <text key={`tick-${index}`} x={point.x} y={CHART_HEIGHT - MARGINS.bottom + 16} textAnchor="end" dominantBaseline="middle" transform={`rotate(-40 ${point.x} ${CHART_HEIGHT - MARGINS.bottom + 16})`} fontSize="10" fill="#64748b">{axisLabel(point.label)}</text>; })}
           {active ? <g pointerEvents="none"><rect x={tooltipX} y={tooltipY} width={tooltipWidth} height="50" rx="8" fill="#0f172a" opacity="0.97" /><text x={tooltipX + 12} y={tooltipY + 20} fontSize="11" fontWeight="600" fill="white">{tooltipPrefix} {active.label}</text><text x={tooltipX + 12} y={tooltipY + 38} fontSize="11" fill="#cbd5e1">{metricName}: {formatValue(active.value, format)}</text></g> : null}
         </svg>
       ) : null}

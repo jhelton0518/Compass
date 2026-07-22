@@ -1,24 +1,5 @@
-// Clearly isolated prototype fixtures. These values are not calculated from
-// the income-statement engine or presented as connected accounting data.
-export const liquidityFixture = {
-  asOfPeriod: "2026-06",
-  cash: 418_000,
-  workingCapital: 612_000,
-  currentRatio: 1.89,
-  cashTrend: [512000, 486000, 459000, 447000, 431000, 418000],
-  cashTrendLabels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-  currentAssets: [
-    { label: "Cash", amount: 418_000 },
-    { label: "Accounts Receivable", amount: 782_000 },
-    { label: "Other current assets", amount: 96_000 },
-  ],
-  currentLiabilities: [
-    { label: "Accounts Payable", amount: 524_000 },
-    { label: "Credit cards", amount: 118_000 },
-    { label: "Other current liabilities", amount: 42_000 },
-  ],
-};
-
+// Clearly isolated operational AR/AP fixtures. These are dated working lists,
+// not period-ending Balance Sheet control-account balances.
 export const receivablesFixture = {
   invoices: [
     { id: "INV-2481", customer: "Harpeth Ridge Development", due: "2026-05-02", amount: 128_000 },

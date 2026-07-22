@@ -1,4 +1,5 @@
-import { FileChartColumn, LockKeyhole } from "lucide-react";
+import { FileChartColumn } from "lucide-react";
+import Link from "next/link";
 import { PageShell } from "../../components/app/page-shell";
 import { PageHeader } from "../../components/app/page-header";
 import { Panel, SegmentedLinks } from "../../components/app/ui";
@@ -6,15 +7,17 @@ import { LineChart } from "../../components/app/line-chart";
 import { financialPeriods } from "../../data/financial-periods";
 import { incomeStatements } from "../../data/income-statements";
 import { buildIncomeStatementViewModel } from "../../lib/services/analysis-view-models";
+import { BalanceSheetView } from "../../components/app/balance-sheet-view";
 
 const viewLabels = { monthly: "Monthly", ytd: "YTD", r12m: "R12M" };
 
 export default async function FinancialStatementsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string; period?: string }>;
+  searchParams: Promise<{ statement?: string; view?: string; period?: string }>;
 }) {
   const params = await searchParams;
+  if (params.statement === "balance-sheet") return <BalanceSheetView period={params.period} />;
   const view = params.view === "monthly" || params.view === "ytd" ? params.view : "r12m";
   const period = financialPeriods.some((item) => item.id === params.period) ? params.period! : "2026-06";
   const model = buildIncomeStatementViewModel({ endPeriod: period, view, statements: incomeStatements, periods: financialPeriods });
@@ -27,8 +30,8 @@ export default async function FinancialStatementsPage({
 
       <div className="mt-6 flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="inline-flex min-w-0 gap-2 rounded-xl bg-slate-200/70 p-1">
-          <span className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-900 shadow-sm">Income Statement</span>
-          <span className="px-3 py-2 text-xs font-semibold text-slate-500">Balance Sheet · Coming next</span>
+          <Link href={`/financial-statements?statement=income-statement&view=${view}&period=${period}`} aria-current="page" className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-900 shadow-sm">Income Statement</Link>
+          <Link href={`/financial-statements?statement=balance-sheet&period=${period}`} className="px-3 py-2 text-xs font-semibold text-slate-500 hover:text-slate-900">Balance Sheet</Link>
           <span className="px-3 py-2 text-xs font-semibold text-slate-500">Cash Flow · Coming next</span>
         </div>
         <form className="shrink-0">
@@ -98,8 +101,7 @@ export default async function FinancialStatementsPage({
         </>
       )}
 
-      <div className="mt-6 grid gap-4 md:grid-cols-2">
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 p-6"><LockKeyhole className="size-5 text-slate-400" /><h2 className="mt-3 font-semibold text-slate-900">Balance Sheet coming next</h2><p className="mt-2 text-sm leading-6 text-slate-500">Balance-sheet accounts have not been added to the financial foundation.</p></div>
+      <div className="mt-6">
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 p-6"><FileChartColumn className="size-5 text-slate-400" /><h2 className="mt-3 font-semibold text-slate-900">Cash Flow coming next</h2><p className="mt-2 text-sm leading-6 text-slate-500">Cash flow will follow the balance-sheet foundation and reconciliation work.</p></div>
       </div>
     </PageShell>

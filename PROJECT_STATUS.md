@@ -115,7 +115,7 @@ _Last updated: July 22, 2026_
   derives KPI totals, aging buckets, customer risk, days past due, collection
   status, and owner insights from invoice due dates and amounts. No age or
   status values are stored in invoice fixtures.
-- `npm run test:financial` passes 43 focused financial-engine, dashboard,
+- `npm run test:financial` passes 47 focused financial-engine, dashboard,
   profitability, Income Statement, AR transformation, and navigation tests.
 - Income Statement financial QC confirms every displayed rolling endpoint uses
   the same service series as Profitability and reconciles Direct Costs,
@@ -137,13 +137,27 @@ _Last updated: July 22, 2026_
   without storing or double-counting current-year income.
 - Cash Runway has been removed and is deferred until a supported cash-flow
   denominator exists.
+- Financial Statements now provides a selectable, period-ending Balance Sheet
+  for every closed month from July 2024 through June 2026. Its hierarchy places
+  details before subtotals, formats contra balances correctly, and visibly
+  reconciles Total Assets to Total Liabilities and Equity.
+- Balance Sheet summary cards calculate selected-period Total Assets, Total
+  Liabilities, Total Equity, Working Capital, Current Ratio, and Quick Ratio,
+  with neutral comparisons to the immediately preceding available month.
+- Working Capital, Current Ratio, and Quick Ratio charts show all 24 calculated
+  period-ending endpoints using the responsive interactive chart infrastructure.
+- Cash and Working Capital now reads exclusively from the authoritative Balance
+  Sheet service, supports historical period selection, and charts all 24
+  period-ending Operating Cash balances. The superseded liquidity fixture has
+  been removed; operational AR and AP fixtures remain dated July 22, 2026.
 
 ## Current Application Behavior
 
 The application now exposes seven working destinations through the shared
 sidebar. The Dashboard remains the approved R12M overview with four calculated
-profitability KPIs, static Cash, and the unchanged Financial Briefing. Detailed
-analysis lives on purpose-built pages rather than duplicating Dashboard content.
+profitability KPIs, static Cash, and the unchanged Financial Briefing. Financial
+Statements includes selectable Income Statement and Balance Sheet views, while
+Cash and Working Capital uses authoritative period-ending Balance Sheet data.
 
 ## Important Files
 
@@ -180,9 +194,8 @@ analysis lives on purpose-built pages rather than duplicating Dashboard content.
   putting accounting formulas in React components.
 - `lib/services/prototype-view-models.ts` derives fixture-backed presentation
   values such as AR days past due without creating a second stored value.
-- `data/prototype-fixtures.ts` is the isolated source for temporary Cash,
-  working-capital, AR, and AP values. These are not engine-calculated or
-  connected accounting records.
+- `data/prototype-fixtures.ts` is now isolated to operational AR and AP working
+  lists. Period-ending Cash and Working Capital no longer use fixture values.
 - `data/income-statements.ts` contains the approved synthetic prototype model
   from July 2024 through June 2026. All 24 periods are marked closed in
   `data/financial-periods.ts`; no prototype period exists after June 2026.
@@ -252,7 +265,7 @@ The initial analysis priority is:
 
 ## Next Action
 
-Begin Balance Sheet UI integration: connect the Cash and Working Capital page,
-Dashboard Cash KPI, and Financial Statements Balance Sheet view to the new
-authoritative service before replacing operational AR/AP fixtures. Cash Flow
-remains deferred.
+Connect the Dashboard Cash KPI to the authoritative June 2026 Balance Sheet
+endpoint without changing its approved layout or briefing. Then plan explicit
+AR/AP control-account reconciliation while preserving July 22 operational aging
+views. Cash Flow remains deferred.

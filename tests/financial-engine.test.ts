@@ -34,6 +34,8 @@ import { volunteerCustomHomesBalanceSheetRecords, volunteerCustomHomesOpeningEqu
 import { balanceSheetReportingCategories } from "../data/balance-sheet-reporting-categories.ts";
 import { volunteerCustomHomesBalanceSheetAccountMappings } from "../data/account-mappings.ts";
 import { calculateBalanceSheet, calculateCurrentFiscalYearNetIncome, calculateLiquidityMetrics } from "../lib/services/balance-sheet-service.ts";
+import { buildBalanceSheetViewModel, buildCashViewModel } from "../lib/services/balance-sheet-view-models.ts";
+import { payablesFixture } from "../data/prototype-fixtures.ts";
 
 // Synthetic test fixtures verify engine behavior only. They are not approved
 // Volunteer Custom Homes prototype data and are never imported by the app.
@@ -924,4 +926,64 @@ test("uses historical endpoint balances rather than aggregating them as R12M", (
 
 test("returns explicit unavailable liquidity ratios for zero current liabilities", () => {
   assert.deepEqual(calculateLiquidityMetrics(100_000, 0, 75_000), { workingCapital: 100_000, currentRatio: null, quickAssets: 75_000, quickRatio: null, unavailableReason: "zero-current-liabilities" });
+});
+
+test("builds the selected Balance Sheet hierarchy with details before subtotals", () => {
+  const model = buildBalanceSheetViewModel("2024-09");
+  assert.equal(model.current.period, "2024-09");
+  assert.equal(model.periods.length, 24);
+  assert.deepEqual(model.periods.map((period) => period.id), getMonthlyPeriodWindow("2026-06", 24));
+  const index = (label: string) => model.rows.findIndex((row) => row.label === label);
+  assert.ok(index("Operating Cash") < index("Total Current Assets"));
+  assert.ok(index("Accumulated Depreciation") < index("Total Non-Current Assets"));
+  assert.ok(index("Accounts Payable") < index("Total Current Liabilities"));
+  assert.ok(index("Long-Term Debt") < index("Total Non-Current Liabilities"));
+  assert.ok(index("Current Fiscal-Year Net Income") < index("Total Equity"));
+  assert.equal(model.rows[index("Accumulated Depreciation")].displayValue?.startsWith("("), true);
+  assert.equal(model.rows[index("Owner Distributions")].displayValue?.startsWith("("), true);
+  assert.equal(model.rows.at(-1)?.displayValue, "Balanced");
+});
+
+test("builds approved June summaries and May prior-month comparisons", () => {
+  const model = buildBalanceSheetViewModel("2026-06");
+  assert.equal(model.priorPeriod, "2026-05");
+  assert.deepEqual(Object.fromEntries(model.summaries.map((summary) => [summary.key, summary.value])), {
+    "total-assets": "$2.4M",
+    "total-liabilities": "$1.07M",
+    "total-equity": "$1.32M",
+    "working-capital": "$612K",
+    "current-ratio": "1.89×",
+    "quick-ratio": "1.75×",
+  });
+  const may = requireCompleteBalanceSheet("2026-05");
+  assert.equal(model.current.totalAssets - may.totalAssets, 25_000);
+  assert.equal(model.summaries.find((summary) => summary.key === "total-assets")?.comparison, "+$25K");
+  assert.equal(model.summaries.every((summary) => summary.comparison !== null), true);
+});
+
+test("builds 24 authoritative Cash and liquidity trend endpoints", () => {
+  const cash = buildCashViewModel("2026-06");
+  const balanceSheet = buildBalanceSheetViewModel("2026-06");
+  assert.equal(cash.cash, 418_000);
+  assert.equal(cash.cash, balanceSheet.current.components.cash);
+  assert.equal(cash.cashTrend.length, 24);
+  assert.deepEqual(cash.cashTrend.map((point) => point.period), getMonthlyPeriodWindow("2026-06", 24));
+  assert.equal(cash.cashTrend.at(-1)?.value, 418_000);
+  assert.equal(balanceSheet.trends.length, 24);
+  for (const point of balanceSheet.trends) {
+    const statement = requireCompleteBalanceSheet(point.period);
+    assert.equal(point.workingCapital, statement.liquidity.workingCapital);
+    assert.equal(point.currentRatio, statement.liquidity.currentRatio);
+    assert.equal(point.quickRatio, statement.liquidity.quickRatio);
+  }
+});
+
+test("keeps July operational AR and AP distinct from June control balances", () => {
+  const operationalAr = buildReceivablesViewModel(receivablesFixture, "2026-07-22");
+  const june = requireCompleteBalanceSheet("2026-06");
+  assert.equal(operationalAr.total, 517_000);
+  assert.equal(june.components.accountsReceivable, 782_000);
+  assert.equal(payablesFixture.total, 524_000);
+  assert.equal(june.components.accountsPayable, 524_000);
+  assert.equal(operationalAr.asOfDate, "2026-07-22");
 });
