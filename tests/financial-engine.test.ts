@@ -18,6 +18,7 @@ import {
   formatDollarAbbreviation,
   formatPercentage,
 } from "../lib/formatters/financial.ts";
+import { calculateDashboardFinancialModel } from "../lib/services/dashboard-financial-service.ts";
 
 // Synthetic test fixtures verify engine behavior only. They are not approved
 // Volunteer Custom Homes prototype data and are never imported by the app.
@@ -443,5 +444,110 @@ test("monthly prototype subtotals sum exactly to each R12M result", () => {
         r12m.totals[key],
       );
     }
+  }
+});
+
+test("builds the approved dashboard-facing calculated model", () => {
+  const model = calculateDashboardFinancialModel({
+    companyId: "vch",
+    endPeriod: "2026-06",
+    statements: incomeStatements,
+    periods: financialPeriods,
+  });
+
+  if (model.status !== "complete") {
+    assert.fail("Expected a complete dashboard financial model.");
+  }
+
+  assert.equal(model.companyId, "vch");
+  assert.equal(model.current.window.startPeriod, "2025-07");
+  assert.equal(model.current.window.endPeriod, "2026-06");
+  assert.equal(model.prior.window.startPeriod, "2024-07");
+  assert.equal(model.prior.window.endPeriod, "2025-06");
+  assert.deepEqual(model.kpis, {
+    revenue: { value: "$5.24M", comparison: "+8.4%" },
+    grossProfit: {
+      dollars: "$1.35M",
+      percent: "25.8%",
+      comparison: "−3.2 pts",
+    },
+    overhead: {
+      percent: "14.6%",
+      comparison: "−3.8 pts",
+      favorable: true,
+    },
+    netIncome: {
+      dollars: "$545K",
+      percent: "10.4%",
+      comparison: "+0.3 pts",
+    },
+  });
+});
+
+test("builds all 12 dashboard monthly trend points through June 2026", () => {
+  const model = calculateDashboardFinancialModel({
+    companyId: "vch",
+    endPeriod: "2026-06",
+    statements: incomeStatements,
+    periods: financialPeriods,
+  });
+
+  if (model.status !== "complete") {
+    assert.fail("Expected a complete dashboard financial model.");
+  }
+
+  assert.equal(model.trends.length, 12);
+  assert.deepEqual(
+    model.trends.map((point) => point.period),
+    getMonthlyPeriodWindow("2026-06", 12),
+  );
+  assert.equal(
+    formatPercentage(model.trends.at(-1)!.grossProfitPercent),
+    "22.9%",
+  );
+  assert.equal(
+    model.trends.every((point) => point.unavailableReason === null),
+    true,
+  );
+  assert.deepEqual(model.trendSummaries, {
+    grossProfitPercent: {
+      startPercent: "29.0%",
+      endPercent: "22.9%",
+      comparison: "−6.1 pts",
+      favorable: false,
+    },
+    overheadPercent: {
+      startPercent: "15.8%",
+      endPercent: "13.8%",
+      comparison: "−2.0 pts",
+      favorable: true,
+    },
+    operatingProfitPercent: {
+      startPercent: "13.2%",
+      endPercent: "9.1%",
+      comparison: "−4.1 pts",
+      favorable: false,
+    },
+    netIncomePercent: {
+      startPercent: "12.1%",
+      endPercent: "8.6%",
+      comparison: "−3.5 pts",
+      favorable: false,
+    },
+  });
+});
+
+test("keeps dashboard profitability unavailable for an incomplete window", () => {
+  const model = calculateDashboardFinancialModel({
+    companyId: "vch",
+    endPeriod: "2026-06",
+    statements: incomeStatements.slice(0, -1),
+    periods: financialPeriods,
+  });
+
+  assert.equal(model.status, "incomplete");
+  if (model.status === "incomplete") {
+    assert.equal(model.reason, "missing-periods");
+    assert.deepEqual(model.window.missingPeriods, ["2026-06"]);
   }
 });

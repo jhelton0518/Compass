@@ -1,37 +1,27 @@
 import { ArrowDownRight, ArrowUpRight, TrendingUp } from "lucide-react";
+import type { DashboardFinancialModel } from "../../app/types/kpi";
 
-const trends = [
+const trendPresentation = [
   {
     label: "Gross Profit %",
-    value: "25.8%",
-    change: "−3.2 pts",
+    key: "grossProfitPercent" as const,
     direction: "Margin is narrowing",
-    tone: "attention" as const,
-    path: "M2 9 C18 10, 26 16, 40 14 S61 23, 76 22 S99 31, 118 33",
   },
   {
     label: "Overhead % of Revenue",
-    value: "14.6%",
-    change: "−3.8 pts",
+    key: "overheadPercent" as const,
+    lowerIsBetter: true,
     direction: "Overhead pressure is easing",
-    tone: "positive" as const,
-    path: "M2 31 C19 29, 27 31, 41 25 S61 24, 76 19 S99 17, 118 10",
   },
   {
     label: "Operating Profit %",
-    value: "11.2%",
-    change: "+0.6 pts",
-    direction: "Profitability is strengthening",
-    tone: "positive" as const,
-    path: "M2 30 C17 28, 27 31, 40 26 S61 24, 76 20 S99 16, 118 17",
+    key: "operatingProfitPercent" as const,
+    direction: "Operating margin is narrowing",
   },
   {
     label: "Net Income %",
-    value: "10.4%",
-    change: "+0.3 pts",
-    direction: "Bottom line is holding firm",
-    tone: "positive" as const,
-    path: "M2 31 C18 29, 27 32, 41 27 S61 23, 76 24 S98 17, 118 18",
+    key: "netIncomePercent" as const,
+    direction: "Bottom line margin is narrowing",
   },
 ];
 
@@ -48,7 +38,57 @@ const toneStyles = {
   },
 };
 
-export function ProfitabilityTrends() {
+function sparklinePath(values: readonly (number | null)[], lowerIsBetter = false) {
+  if (values.some((value) => value === null)) {
+    return null;
+  }
+
+  const numericValues = values as number[];
+  const minimum = Math.min(...numericValues);
+  const maximum = Math.max(...numericValues);
+  const range = maximum - minimum || 1;
+
+  return numericValues
+    .map((value, index) => {
+      const x = 2 + (index / (numericValues.length - 1)) * 116;
+      const normalized = (value - minimum) / range;
+      const visualValue = lowerIsBetter ? 1 - normalized : normalized;
+      const y = 35 - visualValue * 28;
+      return `${index === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`;
+    })
+    .join(" ");
+}
+
+export function ProfitabilityTrends({ model }: { model: DashboardFinancialModel }) {
+  const trends = trendPresentation.map((trend) => {
+    if (model.status === "incomplete") {
+      return {
+        ...trend,
+        value: "—",
+        change: "—",
+        tone: "attention" as const,
+        path: null,
+        displayedDirection: "R12M data unavailable",
+      };
+    }
+
+    const summary = model.trendSummaries[trend.key];
+    const path = sparklinePath(
+      model.trends.map((point) => point[trend.key]),
+      trend.lowerIsBetter,
+    );
+    return {
+      ...trend,
+      value: summary.endPercent,
+      change: summary.comparison,
+      tone: summary.favorable ? ("positive" as const) : ("attention" as const),
+      path,
+      displayedDirection: path
+        ? trend.direction
+        : "Monthly ratio unavailable due to zero revenue",
+    };
+  });
+
   return (
     <section
       className="mt-6 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm"
@@ -105,17 +145,19 @@ export function ProfitabilityTrends() {
                 preserveAspectRatio="none"
               >
                 <path d="M2 39 H118" className="text-slate-100" stroke="currentColor" />
-                <path
-                  d={trend.path}
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+                {trend.path ? (
+                  <path
+                    d={trend.path}
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                ) : null}
               </svg>
 
               <p className="mt-3 text-xs font-medium text-slate-500">
-                {trend.direction}
+                {trend.displayedDirection}
               </p>
             </article>
           );

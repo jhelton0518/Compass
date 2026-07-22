@@ -28,7 +28,20 @@ export function formatPercentage(value: number | null) {
   return value === null ? "—" : `${value.toFixed(1)}%`;
 }
 
-export function formatComparisonPoints(value: number) {
+export function formatPercentageComparison(value: number | null) {
+  if (value === null) {
+    return "—";
+  }
+
+  const sign = value > 0 ? "+" : value < 0 ? "−" : "";
+  return `${sign}${Math.abs(value).toFixed(1)}%`;
+}
+
+export function formatComparisonPoints(value: number | null) {
+  if (value === null) {
+    return "—";
+  }
+
   const sign = value > 0 ? "+" : value < 0 ? "−" : "";
   return `${sign}${Math.abs(value).toFixed(1)} pts`;
 }

@@ -50,3 +50,48 @@ export type IncompleteR12MResult = {
 };
 
 export type R12MResult = CompleteR12MResult | IncompleteR12MResult;
+
+export type DashboardProfitabilityKey =
+  | "grossProfitPercent"
+  | "overheadPercent"
+  | "operatingProfitPercent"
+  | "netIncomePercent";
+
+export type DashboardTrendPoint = {
+  period: string;
+  grossProfitPercent: number | null;
+  overheadPercent: number | null;
+  operatingProfitPercent: number | null;
+  netIncomePercent: number | null;
+  unavailableReason: PercentageUnavailableReason | null;
+};
+
+export type DashboardFinancialModel =
+  | {
+      status: "incomplete";
+      companyId: string;
+      reason: R12MIncompleteReason;
+      window: MonthlyPeriodWindow;
+    }
+  | {
+      status: "complete";
+      companyId: string;
+      current: CompleteR12MResult;
+      prior: CompleteR12MResult;
+      kpis: {
+        revenue: { value: string; comparison: string };
+        grossProfit: { dollars: string; percent: string; comparison: string };
+        overhead: { percent: string; comparison: string; favorable: boolean };
+        netIncome: { dollars: string; percent: string; comparison: string };
+      };
+      trendSummaries: Record<
+        DashboardProfitabilityKey,
+        {
+          startPercent: string;
+          endPercent: string;
+          comparison: string;
+          favorable: boolean | null;
+        }
+      >;
+      trends: DashboardTrendPoint[];
+    };

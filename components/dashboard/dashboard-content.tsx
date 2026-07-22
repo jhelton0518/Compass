@@ -8,14 +8,24 @@ import {
 
 import { MetricCard } from "./metric-card";
 import { FinancialBriefing } from "./financial-briefing";
-import { ProfitabilityTrends } from "./profitability-trends";
+import { incomeStatements } from "../../data/income-statements";
+import { financialPeriods } from "../../data/financial-periods";
+import { volunteerCustomHomes } from "../../data/volunteer-custom-homes";
+import { calculateDashboardFinancialModel } from "../../lib/services/dashboard-financial-service";
 
-const metrics = [
+const dashboardFinancials = calculateDashboardFinancialModel({
+  companyId: volunteerCustomHomes.id,
+  endPeriod: "2026-06",
+  statements: incomeStatements,
+  periods: financialPeriods,
+});
+
+const metricPresentation = [
   {
     label: "Revenue",
-    value: "$5.24M",
+    value: "—",
     context: "Rolling 12 months",
-    change: "+8.4%",
+    change: "—",
     changeLabel: "vs. prior 12 months",
     trend: "positive" as const,
     icon: Banknote,
@@ -24,9 +34,9 @@ const metrics = [
   },
   {
     label: "Gross Profit %",
-    value: "25.8%",
-    context: "$1.35M gross profit",
-    change: "−3.2 pts",
+    value: "—",
+    context: "R12M data unavailable",
+    change: "—",
     changeLabel: "vs. prior 12 months",
     trend: "negative" as const,
     icon: TrendingUp,
@@ -34,9 +44,9 @@ const metrics = [
   },
   {
     label: "Overhead % of Revenue",
-    value: "14.6%",
+    value: "—",
     context: "Overhead discipline is improving",
-    change: "−3.8 pts",
+    change: "—",
     changeLabel: "vs. prior 12 months",
     trend: "positive" as const,
     icon: ShieldCheck,
@@ -44,9 +54,9 @@ const metrics = [
   },
   {
     label: "Net Income %",
-    value: "10.4%",
-    context: "$545K net income",
-    change: "+0.3 pts",
+    value: "—",
+    context: "R12M data unavailable",
+    change: "—",
     changeLabel: "vs. prior 12 months",
     trend: "positive" as const,
     icon: CircleDollarSign,
@@ -65,6 +75,42 @@ const metrics = [
 ];
 
 export function DashboardContent() {
+  const unavailable = dashboardFinancials.status === "incomplete";
+  const calculatedMetrics = unavailable
+    ? [
+        { value: "—", context: "R12M data unavailable", change: "—" },
+        { value: "—", context: "R12M data unavailable", change: "—" },
+        { value: "—", context: "R12M data unavailable", change: "—" },
+        { value: "—", context: "R12M data unavailable", change: "—" },
+      ]
+    : [
+        {
+          value: dashboardFinancials.kpis.revenue.value,
+          context: "Rolling 12 months",
+          change: dashboardFinancials.kpis.revenue.comparison,
+        },
+        {
+          value: dashboardFinancials.kpis.grossProfit.percent,
+          context: `${dashboardFinancials.kpis.grossProfit.dollars} gross profit`,
+          change: dashboardFinancials.kpis.grossProfit.comparison,
+        },
+        {
+          value: dashboardFinancials.kpis.overhead.percent,
+          context: "Overhead discipline is improving",
+          change: dashboardFinancials.kpis.overhead.comparison,
+        },
+        {
+          value: dashboardFinancials.kpis.netIncome.percent,
+          context: `${dashboardFinancials.kpis.netIncome.dollars} net income`,
+          change: dashboardFinancials.kpis.netIncome.comparison,
+        },
+      ];
+  const metrics = metricPresentation.map((metric, index) =>
+    index < calculatedMetrics.length
+      ? { ...metric, ...calculatedMetrics[index] }
+      : metric,
+  );
+
   return (
     <section className="mt-7" aria-labelledby="financial-overview-heading">
       <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
@@ -100,7 +146,6 @@ export function DashboardContent() {
       </div>
 
       <FinancialBriefing />
-      <ProfitabilityTrends />
     </section>
   );
 }
