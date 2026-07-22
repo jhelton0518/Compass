@@ -5,6 +5,18 @@ function formatNumber(value: number, maximumFractionDigits: number) {
   }).format(value);
 }
 
+export function formatDollars(amount: number) {
+  if (!Number.isSafeInteger(amount)) {
+    throw new TypeError("Currency amounts must be integer dollars.");
+  }
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
 export function formatDollarAbbreviation(amount: number) {
   if (!Number.isSafeInteger(amount)) {
     throw new TypeError("Currency amounts must be integer dollars.");

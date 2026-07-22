@@ -43,6 +43,17 @@ Current UI priority:
 - The prototype's primary R12M window is July 2025 through June 2026.
 - Do not invent prototype data beyond July 2026.
 - Volunteer Custom Homes is the prototype company.
+- Unless explicitly requested otherwise, every P&L-based chart or trend must
+  show rolling-12-month (R12M) values. Each point is calculated from aggregated
+  trailing-12-month dollars ending in the labeled month; never average monthly
+  percentages to produce an R12M percentage.
+- Monthly P&L trends are allowed only when explicitly selected or requested and
+  must be unmistakably labeled "Monthly."
+- Income Statement tables may show monthly dollar columns while nearby margin
+  charts default to R12M values ending in those same displayed months.
+- Point-in-time and operational charts such as Cash, AR, AP, and Working Capital
+  show period-ending balances or as-of values, not R12M balances, and must be
+  labeled accordingly.
 
 ## Design Direction
 

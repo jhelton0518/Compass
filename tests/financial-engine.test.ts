@@ -19,6 +19,16 @@ import {
   formatPercentage,
 } from "../lib/formatters/financial.ts";
 import { calculateDashboardFinancialModel } from "../lib/services/dashboard-financial-service.ts";
+import {
+  buildIncomeStatementViewModel,
+  buildProfitabilityViewModel,
+} from "../lib/services/analysis-view-models.ts";
+import { navItems } from "../lib/navigation.ts";
+import { receivablesFixture } from "../data/prototype-fixtures.ts";
+import {
+  buildReceivablesViewModel,
+  calculateDaysPastDue,
+} from "../lib/services/prototype-view-models.ts";
 
 // Synthetic test fixtures verify engine behavior only. They are not approved
 // Volunteer Custom Homes prototype data and are never imported by the app.
@@ -550,4 +560,177 @@ test("keeps dashboard profitability unavailable for an incomplete window", () =>
     assert.equal(model.reason, "missing-periods");
     assert.deepEqual(model.window.missingPeriods, ["2026-06"]);
   }
+});
+
+test("builds 12 reconciled rolling-R12M profitability endpoints", () => {
+  const model = buildProfitabilityViewModel({
+    companyId: "vch",
+    endPeriod: "2026-06",
+    statements: incomeStatements,
+    periods: financialPeriods,
+  });
+
+  if (model.status !== "complete") {
+    assert.fail("Expected complete profitability analysis.");
+  }
+
+  assert.equal(model.rolling.length, 12);
+  assert.equal(model.rolling[0].period, "2025-07");
+  assert.equal(model.rolling.at(-1)?.period, "2026-06");
+  assert.equal(
+    formatPercentage(model.rolling.at(-1)!.grossProfitPercent),
+    "25.8%",
+  );
+  assert.equal(
+    formatPercentage(model.rolling.at(-1)!.overheadPercent),
+    "14.6%",
+  );
+  assert.equal(model.monthly.length, 12);
+  for (const point of model.rolling) {
+    const expected = requireCompleteR12M(point.period);
+    assert.equal(point.grossProfitPercent, expected.ratios.grossProfitPercent);
+    assert.equal(point.overheadPercent, expected.ratios.overheadPercent);
+    assert.equal(point.operatingProfitPercent, expected.ratios.operatingProfitPercent);
+    assert.equal(point.netIncomePercent, expected.ratios.netIncomePercent);
+  }
+  assert.deepEqual(
+    model.drivers.map((driver) => driver.label),
+    ["Direct Costs", "Indirect Costs", "Overhead"],
+  );
+});
+
+test("builds monthly, YTD, and R12M Income Statement views", () => {
+  const monthly = buildIncomeStatementViewModel({
+    endPeriod: "2026-06",
+    view: "monthly",
+    statements: incomeStatements,
+    periods: financialPeriods,
+  });
+  const ytd = buildIncomeStatementViewModel({
+    endPeriod: "2026-06",
+    view: "ytd",
+    statements: incomeStatements,
+    periods: financialPeriods,
+  });
+  const r12m = buildIncomeStatementViewModel({
+    endPeriod: "2026-06",
+    view: "r12m",
+    statements: incomeStatements,
+    periods: financialPeriods,
+  });
+
+  if (monthly.status !== "complete" || ytd.status !== "complete" || r12m.status !== "complete") {
+    assert.fail("Expected every Income Statement view to be complete.");
+  }
+
+  assert.equal(monthly.startPeriod, "2026-06");
+  assert.equal(monthly.totals.revenue, 900_000);
+  assert.equal(ytd.startPeriod, "2026-01");
+  assert.equal(ytd.totals.revenue, 3_400_000);
+  assert.equal(r12m.startPeriod, "2025-07");
+  assert.equal(r12m.totals.revenue, 5_240_000);
+  assert.equal(r12m.totals.netIncome, 544_960);
+  assert.equal(r12m.rows.some((row) => row.label === "Operating Profit"), true);
+});
+
+test("builds YTD monthly columns from January and leaves future months blank", () => {
+  const model = buildIncomeStatementViewModel({
+    endPeriod: "2026-06",
+    view: "ytd",
+    statements: incomeStatements,
+    periods: financialPeriods,
+  });
+
+  if (model.status !== "complete") assert.fail("Expected complete YTD statement.");
+  assert.equal(model.columns.length, 12);
+  assert.equal(model.columns[0].period, "2026-01");
+  assert.equal(model.columns.at(-1)?.period, "2026-12");
+  assert.deepEqual(model.columns.map((column) => column.available), [
+    true, true, true, true, true, true,
+    false, false, false, false, false, false,
+  ]);
+  assert.equal(model.totalColumnLabel, "YTD Total");
+  const revenue = model.rows.find((row) => row.label === "Revenue")!;
+  assert.deepEqual(revenue.values.slice(6), [null, null, null, null, null, null]);
+  assert.equal(revenue.totalAmount, 3_400_000);
+  assert.deepEqual(
+    model.chartSeries.map((point) => point.period),
+    ["2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06"],
+  );
+});
+
+test("builds exactly 12 ordered R12M columns plus reconciled totals", () => {
+  const model = buildIncomeStatementViewModel({
+    endPeriod: "2026-06",
+    view: "r12m",
+    statements: incomeStatements,
+    periods: financialPeriods,
+  });
+
+  if (model.status !== "complete") assert.fail("Expected complete R12M statement.");
+  assert.equal(model.columns.length, 12);
+  assert.deepEqual(model.columns.map((column) => column.period), getMonthlyPeriodWindow("2026-06", 12));
+  assert.equal(model.totalColumnLabel, "R12M Total");
+  assert.equal(model.rows.find((row) => row.label === "Revenue")?.totalAmount, 5_240_000);
+  assert.equal(model.rows.find((row) => row.label === "Net Income")?.totalAmount, 544_960);
+});
+
+test("changes Income Statement windows with the selected as-of period", () => {
+  const r12m = buildIncomeStatementViewModel({ endPeriod: "2026-03", view: "r12m", statements: incomeStatements, periods: financialPeriods });
+  const ytd = buildIncomeStatementViewModel({ endPeriod: "2026-03", view: "ytd", statements: incomeStatements, periods: financialPeriods });
+  if (r12m.status !== "complete" || ytd.status !== "complete") assert.fail("Expected complete shifted statements.");
+  assert.equal(r12m.columns[0].period, "2025-04");
+  assert.equal(r12m.columns.at(-1)?.period, "2026-03");
+  assert.deepEqual(ytd.columns.map((column) => column.available), [true, true, true, false, false, false, false, false, false, false, false, false]);
+});
+
+test("calculates every statement P&L chart point from aggregated R12M dollars", () => {
+  const model = buildIncomeStatementViewModel({ endPeriod: "2026-06", view: "r12m", statements: incomeStatements, periods: financialPeriods });
+  if (model.status !== "complete") assert.fail("Expected complete statement charts.");
+  assert.equal(model.chartSeries.length, 12);
+  for (const point of model.chartSeries) {
+    const expected = requireCompleteR12M(point.period);
+    assert.equal(point.grossProfitPercent, expected.ratios.grossProfitPercent);
+    assert.equal(point.overheadPercent, expected.ratios.overheadPercent);
+    assert.equal(point.netIncomePercent, expected.ratios.netIncomePercent);
+  }
+  assert.equal(formatPercentage(model.chartSeries.at(-1)!.netIncomePercent), "10.4%");
+  const juneMonthly = calculateProfitabilityRatios(calculateMonthlySubtotals(incomeStatements.at(-1)!));
+  assert.equal(formatPercentage(juneMonthly.netIncomePercent), "8.6%");
+  assert.notEqual(model.chartSeries.at(-1)!.netIncomePercent, juneMonthly.netIncomePercent);
+});
+
+test("derives the July 22 AR aging model entirely from invoice due dates", () => {
+  const model = buildReceivablesViewModel(receivablesFixture, "2026-07-22");
+  assert.deepEqual(model.invoices.map((invoice) => invoice.daysPastDue), [81, 59, 44, 31, 12]);
+  assert.deepEqual(model.invoices.map((invoice) => invoice.status), ["Escalate", "Escalate", "Follow up", "Follow up", "Follow up"]);
+  assert.equal(model.total, 517_000);
+  assert.equal(model.current, 0);
+  assert.equal(model.over45, 220_000);
+  assert.equal(model.averageDaysPastDue, 46);
+  assert.deepEqual(model.aging, [
+    { label: "Current", amount: 0 },
+    { label: "1–30", amount: 108_000 },
+    { label: "31–45", amount: 189_000 },
+    { label: "46–60", amount: 92_000 },
+    { label: "61–90", amount: 128_000 },
+    { label: "90+", amount: 0 },
+  ]);
+  assert.deepEqual(model.customers.map((customer) => customer.risk), ["High", "Watch", "Watch", "High", "Watch"]);
+  assert.equal(calculateDaysPastDue("2026-08-10", "2026-07-22"), 0);
+});
+
+test("defines unique working routes for every application destination", () => {
+  const expectedRoutes = [
+    "/",
+    "/profitability",
+    "/cash",
+    "/financial-statements",
+    "/accounts-receivable",
+    "/accounts-payable",
+    "/settings",
+  ];
+
+  assert.deepEqual(navItems.map((item) => item.href), expectedRoutes);
+  assert.equal(new Set(navItems.map((item) => item.href)).size, expectedRoutes.length);
 });

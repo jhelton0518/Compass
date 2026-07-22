@@ -1,0 +1,20 @@
+import type { LucideIcon } from "lucide-react";
+
+export function StatCard({ label, value, detail, icon: Icon, tone = "slate" }: { label: string; value: string; detail: string; icon: LucideIcon; tone?: "slate" | "blue" | "green" | "amber" }) {
+  const tones = { slate: "bg-slate-100 text-slate-600", blue: "bg-blue-50 text-blue-700", green: "bg-emerald-50 text-emerald-700", amber: "bg-amber-50 text-amber-700" };
+  return <article className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6"><div className="flex items-start justify-between gap-4"><div><p className="text-sm font-medium text-slate-500">{label}</p><p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{value}</p><p className="mt-2 text-xs leading-5 text-slate-500">{detail}</p></div><span className={`grid size-10 shrink-0 place-items-center rounded-xl ${tones[tone]}`}><Icon className="size-[18px]" aria-hidden="true" /></span></div></article>;
+}
+
+export function Panel({ title, description, children, className = "" }: { title: string; description?: string; children: React.ReactNode; className?: string }) {
+  return <section className={`overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm ${className}`}><div className="border-b border-slate-200/80 px-5 py-4 sm:px-6"><h2 className="text-base font-semibold text-slate-950">{title}</h2>{description ? <p className="mt-1 text-sm text-slate-500">{description}</p> : null}</div>{children}</section>;
+}
+
+export function PrototypeBadge() { return <span className="inline-flex rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-violet-700">Prototype fixture</span>; }
+
+export function StatusBadge({ children, tone = "slate" }: { children: React.ReactNode; tone?: "slate" | "green" | "amber" | "red" | "blue" }) { const tones={slate:"bg-slate-100 text-slate-700",green:"bg-emerald-50 text-emerald-700",amber:"bg-amber-50 text-amber-700",red:"bg-rose-50 text-rose-700",blue:"bg-blue-50 text-blue-700"}; return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${tones[tone]}`}>{children}</span>; }
+
+export function SegmentedLinks({ items }: { items: { label: string; href: string; active: boolean }[] }) { return <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm">{items.map(item=><a key={item.href} href={item.href} className={`rounded-lg px-3 py-2 text-xs font-semibold ${item.active ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-50"}`}>{item.label}</a>)}</div>; }
+
+export function MiniBars({ values, labels, tone = "bg-blue-500" }: { values: number[]; labels: string[]; tone?: string }) { const max=Math.max(...values,1); return <div className="flex h-44 items-end gap-2 px-1 pt-4">{values.map((value,index)=><div key={`${labels[index]}-${index}`} className="flex min-w-0 flex-1 flex-col items-center justify-end gap-2"><div className={`w-full rounded-t-md ${tone}`} style={{height:`${Math.max(6,(value/max)*120)}px`}} title={`${labels[index]}: ${value}`} /><span className="max-w-full truncate text-[10px] text-slate-400">{labels[index]}</span></div>)}</div>; }
+
+export function DataTable({ headers, rows }: { headers: string[]; rows: React.ReactNode[][] }) { return <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left"><thead className="bg-slate-50"><tr>{headers.map(header=><th key={header} className="px-5 py-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">{header}</th>)}</tr></thead><tbody className="divide-y divide-slate-100">{rows.map((row,index)=><tr key={index} className="hover:bg-slate-50/60">{row.map((cell,cellIndex)=><td key={cellIndex} className="px-5 py-3.5 text-sm text-slate-700">{cell}</td>)}</tr>)}</tbody></table></div>; }
