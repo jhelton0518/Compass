@@ -25,7 +25,7 @@ const briefingPoints = [
     description:
       "Slow customer collections and pre-buying materials are tying up cash needed to run active jobs.",
     icon: WalletCards,
-    iconStyle: "bg-blue-50 text-blue-700",
+    iconStyle: "bg-brand-50 text-brand-700",
   },
 ];
 
@@ -45,7 +45,7 @@ export function FinancialBriefing() {
             />
           </span>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.09em] text-blue-700">
+            <p className="text-xs font-semibold uppercase tracking-[0.09em] text-brand-700">
               Owner&apos;s briefing
             </p>
             <h2

@@ -1,6 +1,6 @@
 # Compass Project Status
 
-_Last updated: July 22, 2026_
+_Last updated: July 23, 2026_
 
 ## Checkpoint
 
@@ -87,8 +87,11 @@ _Last updated: July 22, 2026_
 - The shared line chart measures its rendered container with `ResizeObserver`
   and draws at matching SVG pixel dimensions without a stretched coordinate
   system. It retains every data point, selects at most six non-overlapping
-  endpoint-inclusive axis labels, and provides clamped SVG tooltips, active
-  markers, and guide lines for pointer, keyboard, and touch interaction.
+  endpoint-inclusive axis labels, and selects the nearest period from horizontal
+  position anywhere in the plot. Clamped SVG tooltips, active markers, guide
+  lines, arrow-key navigation, and touch dragging share the same interaction
+  model. Each chart uses a unique restrained company-theme gradient area
+  anchored to the visible zero baseline while keeping its line visually dominant.
 - Income Statement Monthly, YTD, and R12M views expose underlying monthly
   columns. YTD shows January through December with future months unavailable;
   R12M shows 12 trailing months, and both include reconciled total columns.
@@ -103,6 +106,10 @@ _Last updated: July 22, 2026_
 - Twelve-point charts display all 12 crisp, angled month labels while retaining
   measured SVG dimensions, clamped interactive tooltips, active markers, and
   guide lines. Live checks found no label intersections at desktop width.
+- Financial Statements, Balance Sheet, and Cash share an accessible `As of`
+  month selector. It lists all 24 periods with human-readable month names and
+  updates cards, statements, comparisons, and endpoint-controlled chart windows
+  immediately without an Apply button, form submission, or full-page reload.
 - Percentage charts derive an independent domain from each displayed series,
   pad each side by the greater of 20% of the observed range or 0.75 percentage
   points, and round outward to clean half-point bounds. Currency charts retain
@@ -111,11 +118,28 @@ _Last updated: July 22, 2026_
   aggregated trailing-12-month dollars, never averages of monthly percentages.
   Monthly P&L trends require explicit selection and labeling; operational and
   balance-sheet measures remain period-ending or as-of views.
+- Settings now provides 12 professionally designed prototype color themes.
+  Each preset supplies a complete semantic palette for accents, hover and focus
+  states, links, selected controls, dark sidebar surfaces, navigation states,
+  and financial-table hierarchy. Financial trend lines, markers, gradients, and
+  AR/AP aging bars use a fixed neutral slate visualization palette across every
+  theme so ordinary financial data does not imply favorable or unfavorable
+  judgment through brand color. Theme changes update the surrounding interface
+  immediately without recoloring financial values or neutral structural
+  surfaces. Compass Blue is the default and can be restored
+  with a reset action. The
+  preference is temporarily persisted in company-scoped `localStorage` for
+  Volunteer Custom Homes and is structured for replacement by a company-level
+  database setting when accounts exist. Future branding work will let users
+  upload, replace, or remove a company logo with file-type, file-size, dimension,
+  and security validation. Customer logos should appear in a restrained
+  workspace-branding location such as the company selector/header or sidebar so
+  Compass product branding and customer company branding coexist.
 - Accounts Receivable uses an operational as-of date of July 22, 2026 and
   derives KPI totals, aging buckets, customer risk, days past due, collection
   status, and owner insights from invoice due dates and amounts. No age or
   status values are stored in invoice fixtures.
-- `npm run test:financial` passes 47 focused financial-engine, dashboard,
+- `npm run test:financial` passes 67 focused financial-engine, dashboard,
   profitability, Income Statement, AR transformation, and navigation tests.
 - Income Statement financial QC confirms every displayed rolling endpoint uses
   the same service series as Profitability and reconciles Direct Costs,
@@ -124,6 +148,11 @@ _Last updated: July 22, 2026_
 - The authoritative Balance Sheet foundation defines current and non-current
   Assets and Liabilities, Equity, contra accounts, liquidity classifications,
   period-ending account balances, statement outputs, and AR/AP aging contracts.
+- Balance Sheet reconciliation remains available in the financial service and
+  view model. Balanced statements are silent in the interface; a difference
+  exceeding the one-dollar rounding tolerance produces an accessible,
+  period-specific warning above the Balance Sheet summary instead of a status
+  row at the bottom of the statement.
 - Volunteer Custom Homes has 24 ordered, exactly balanced monthly Balance Sheet
   endpoints from July 2024 through June 2026 using the permanent GL accounts to
   reporting categories to major financial categories hierarchy.
@@ -144,12 +173,14 @@ _Last updated: July 22, 2026_
 - Balance Sheet summary cards calculate selected-period Total Assets, Total
   Liabilities, Total Equity, Working Capital, Current Ratio, and Quick Ratio,
   with neutral comparisons to the immediately preceding available month.
-- Working Capital, Current Ratio, and Quick Ratio charts show all 24 calculated
-  period-ending endpoints using the responsive interactive chart infrastructure.
+- Working Capital, Current Ratio, and Quick Ratio charts show up to 12 calculated
+  monthly period-ending endpoints through the selected period using the responsive
+  interactive chart infrastructure; all 24 authoritative periods remain selectable.
 - Cash and Working Capital now reads exclusively from the authoritative Balance
-  Sheet service, supports historical period selection, and charts all 24
-  period-ending Operating Cash balances. The superseded liquidity fixture has
-  been removed; operational AR and AP fixtures remain dated July 22, 2026.
+  Sheet service, supports all 24 historical period selections, and charts up to
+  12 monthly period-ending Operating Cash balances through the selected period.
+  The superseded liquidity fixture has been removed; operational AR and AP
+  fixtures remain dated July 22, 2026.
 
 ## Current Application Behavior
 

@@ -122,7 +122,7 @@ export function DashboardContent() {
             Financial overview
           </h2>
           <p className="mt-1 text-sm text-slate-500">
-            Performance through the last closed month.
+            Performance through the latest available month.
           </p>
         </div>
         <p className="text-xs font-medium text-slate-400">Updated July 15, 2026</p>

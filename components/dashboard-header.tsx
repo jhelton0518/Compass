@@ -19,7 +19,7 @@ export function DashboardHeader() {
           aria-label="Select company"
           className="flex min-h-12 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 text-left shadow-sm transition-colors hover:border-slate-300"
         >
-          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-blue-50 text-blue-700">
+          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700">
             <Building2 aria-hidden="true" className="size-4" strokeWidth={1.9} />
           </span>
           <span className="min-w-0">

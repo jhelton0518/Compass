@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
@@ -30,12 +31,16 @@ import {
   calculateDaysPastDue,
 } from "../lib/services/prototype-view-models.ts";
 import { calculatePercentageChartDomain } from "../lib/services/chart-domain.ts";
+import { buildZeroAreaPath, calculateZeroBaselineY, chartGradientId, movePeriodIndex, nearestPeriodIndex } from "../lib/services/chart-geometry.ts";
 import { volunteerCustomHomesBalanceSheetRecords, volunteerCustomHomesOpeningEquityAnchor } from "../data/balance-sheet-records.ts";
 import { balanceSheetReportingCategories } from "../data/balance-sheet-reporting-categories.ts";
 import { volunteerCustomHomesBalanceSheetAccountMappings } from "../data/account-mappings.ts";
 import { calculateBalanceSheet, calculateCurrentFiscalYearNetIncome, calculateLiquidityMetrics } from "../lib/services/balance-sheet-service.ts";
-import { buildBalanceSheetViewModel, buildCashViewModel } from "../lib/services/balance-sheet-view-models.ts";
+import { ACCOUNTING_EQUATION_ROUNDING_TOLERANCE_DOLLARS, buildAccountingEquationWarning, buildBalanceSheetViewModel, buildCashViewModel } from "../lib/services/balance-sheet-view-models.ts";
 import { payablesFixture } from "../data/prototype-fixtures.ts";
+import { buildPeriodSelectionHref, formatClosedPeriodLabel } from "../lib/services/period-selection.ts";
+import { companyThemes, companyThemeVariables, DEFAULT_COMPANY_THEME_ID, getCompanyTheme, PROTOTYPE_COMPANY_ID } from "../lib/company-themes.ts";
+import { companyThemeStorageKey, loadCompanyThemePreference, resetCompanyThemePreference, saveCompanyThemePreference } from "../lib/services/theme-preference.ts";
 
 // Synthetic test fixtures verify engine behavior only. They are not approved
 // Volunteer Custom Homes prototype data and are never imported by the app.
@@ -818,6 +823,126 @@ test("defines unique working routes for every application destination", () => {
   assert.equal(new Set(navItems.map((item) => item.href)).size, expectedRoutes.length);
 });
 
+test("formats every closed-month selector option as a human-readable period", () => {
+  const labels = financialPeriods.map((period) => formatClosedPeriodLabel(period.id));
+  assert.equal(labels.length, 24);
+  assert.equal(labels.at(-1), "June 2026");
+  assert.equal(labels.at(-2), "May 2026");
+  assert.equal(labels.at(-3), "April 2026");
+  assert.equal(labels.some((label) => /closed/i.test(label)), false);
+});
+
+test("builds immediate period-selection URLs without losing the active statement view", () => {
+  assert.equal(buildPeriodSelectionHref("/financial-statements", "view=r12m", "2025-08"), "/financial-statements?view=r12m&period=2025-08");
+  assert.equal(buildPeriodSelectionHref("/financial-statements", "statement=balance-sheet&period=2026-06", "2025-08"), "/financial-statements?statement=balance-sheet&period=2025-08");
+  assert.equal(buildPeriodSelectionHref("/cash", "period=2026-06", "2025-08"), "/cash?period=2025-08");
+});
+
+test("uses a shared change-driven period selector without forms or Apply actions", () => {
+  const source = readFileSync(new URL("../components/app/period-selector.tsx", import.meta.url), "utf8");
+  assert.match(source, /onChange=/);
+  assert.match(source, /router\.replace/);
+  assert.doesNotMatch(source, /<form|<button|closed/i);
+});
+
+function prototypeStorage(initial: Record<string, string> = {}) {
+  const values = new Map(Object.entries(initial));
+  return {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => { values.set(key, value); },
+    removeItem: (key: string) => { values.delete(key); },
+  };
+}
+
+test("uses Compass Blue as the complete default company theme", () => {
+  const storage = prototypeStorage();
+  assert.equal(DEFAULT_COMPANY_THEME_ID, "compass-blue");
+  assert.equal(loadCompanyThemePreference(storage, PROTOTYPE_COMPANY_ID), "compass-blue");
+  const theme = getCompanyTheme(DEFAULT_COMPANY_THEME_ID);
+  assert.equal(theme.primary, "#2563eb");
+  assert.equal(companyThemeVariables(theme)["--company-primary-accent"], "#2563eb");
+  assert.equal(companyThemeVariables(theme)["--company-primary-accent"], "#2563eb");
+  assert.equal(companyThemeVariables(theme)["--company-brand-surface"], "#0b1729");
+  assert.equal(companyThemeVariables(theme)["--company-primary-accent-foreground"], "#ffffff");
+});
+
+test("defines all required semantic tokens for 12 professional theme presets", () => {
+  assert.deepEqual(companyThemes.map((theme) => theme.name), ["Compass Blue", "Navy", "Sky", "Teal", "Emerald", "Forest", "Purple", "Indigo", "Burgundy", "Red", "Orange", "Slate"]);
+  assert.equal(companyThemes.length, 12);
+  for (const theme of companyThemes) {
+    const variables = companyThemeVariables(theme);
+    assert.equal(Object.keys(variables).length, 21);
+    for (const value of Object.values(variables)) assert.match(value, /^#[0-9a-f]{6}$/i);
+    assert.equal(theme.primaryForeground, "#ffffff");
+    assert.equal(theme.selectedControlText, "#ffffff");
+  }
+});
+
+test("maps the complete Red palette across sidebar, controls, and financial tables", () => {
+  const red = companyThemeVariables(getCompanyTheme("red"));
+  assert.equal(red["--company-brand-surface"], "#260909");
+  assert.equal(red["--company-navigation-active-background"], "#b91c1c");
+  assert.equal(red["--company-selected-control-background"], "#b91c1c");
+  assert.equal(red["--company-table-section-background"], "#fef2f2");
+  assert.equal(red["--company-table-section-text"], "#991b1b");
+});
+
+test("keeps financial chart and aging data colors neutral across company themes", () => {
+  const chartSource = readFileSync(new URL("../components/app/line-chart.tsx", import.meta.url), "utf8");
+  const uiSource = readFileSync(new URL("../components/app/ui.tsx", import.meta.url), "utf8");
+  const arSource = readFileSync(new URL("../app/accounts-receivable/page.tsx", import.meta.url), "utf8");
+  const apSource = readFileSync(new URL("../app/accounts-payable/page.tsx", import.meta.url), "utf8");
+  const dashboardCardSource = readFileSync(new URL("../components/dashboard/metric-card.tsx", import.meta.url), "utf8");
+  const dashboardTrendsSource = readFileSync(new URL("../components/dashboard/profitability-trends.tsx", import.meta.url), "utf8");
+  for (const theme of companyThemes) {
+    assert.equal("--company-chart-line" in companyThemeVariables(theme), false);
+  }
+  assert.match(chartSource, /var\(--financial-chart-line\)/);
+  assert.match(chartSource, /var\(--financial-chart-gradient\)/);
+  assert.doesNotMatch(chartSource, /var\(--company-chart-/);
+  assert.match(uiSource, /var\(--financial-aging-bar\)/);
+  assert.doesNotMatch(arSource, /tone="bg-(?:amber|brand)-/);
+  assert.doesNotMatch(apSource, /tone="bg-(?:amber|brand)-/);
+  assert.match(dashboardCardSource, /text-slate-600/);
+  assert.doesNotMatch(dashboardTrendsSource, /line: "text-(?:emerald|amber|brand)-/);
+});
+
+test("keeps financial-statement brand hierarchy semantic instead of fixed blue", () => {
+  const incomeStatementSource = readFileSync(new URL("../app/financial-statements/page.tsx", import.meta.url), "utf8");
+  const balanceSheetSource = readFileSync(new URL("../components/app/balance-sheet-view.tsx", import.meta.url), "utf8");
+  const sidebarSource = readFileSync(new URL("../components/sidebar.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(incomeStatementSource, /(?:bg|text|border)-blue-/);
+  assert.doesNotMatch(balanceSheetSource, /(?:bg|text|border)-blue-/);
+  assert.match(incomeStatementSource, /bg-table-section/);
+  assert.match(balanceSheetSource, /bg-table-section/);
+  assert.match(sidebarSource, /bg-sidebar/);
+});
+
+test("persists, restores, and resets the company-scoped prototype theme", () => {
+  const storage = prototypeStorage();
+  const key = companyThemeStorageKey(PROTOTYPE_COMPANY_ID);
+  const selected = saveCompanyThemePreference(storage, PROTOTYPE_COMPANY_ID, "emerald");
+  assert.equal(selected.id, "emerald");
+  assert.equal(storage.getItem(key), "emerald");
+  assert.equal(loadCompanyThemePreference(storage, PROTOTYPE_COMPANY_ID), "emerald");
+  assert.deepEqual(companyThemeVariables(getCompanyTheme(loadCompanyThemePreference(storage, PROTOTYPE_COMPANY_ID))), companyThemeVariables(selected));
+  const reset = resetCompanyThemePreference(storage, PROTOTYPE_COMPANY_ID);
+  assert.equal(reset.id, "compass-blue");
+  assert.equal(storage.getItem(key), null);
+  assert.equal(loadCompanyThemePreference(storage, PROTOTYPE_COMPANY_ID), "compass-blue");
+  assert.deepEqual(companyThemeVariables(reset), companyThemeVariables(getCompanyTheme("compass-blue")));
+});
+
+test("theme selection cannot change financial calculations or source data", () => {
+  const beforeStatements = structuredClone(incomeStatements);
+  const beforeModel = calculateDashboardFinancialModel({ companyId: "vch", endPeriod: "2026-06", statements: incomeStatements, periods: financialPeriods });
+  const storage = prototypeStorage();
+  saveCompanyThemePreference(storage, PROTOTYPE_COMPANY_ID, "burgundy");
+  const afterModel = calculateDashboardFinancialModel({ companyId: "vch", endPeriod: "2026-06", statements: incomeStatements, periods: financialPeriods });
+  assert.deepEqual(afterModel, beforeModel);
+  assert.deepEqual(incomeStatements, beforeStatements);
+});
+
 test("calculates dynamic percentage domains with minimum padding and clean outward rounding", () => {
   assert.deepEqual(calculatePercentageChartDomain([25.8, 27.4, 29]), { lower: 25, upper: 30 });
   assert.deepEqual(calculatePercentageChartDomain([14.6, 16.2, 18.2]), { lower: 13.5, upper: 19 });
@@ -836,6 +961,43 @@ test("supports negative and flat percentage domains without forcing zero", () =>
   assert.deepEqual(calculatePercentageChartDomain([-5, -4, -3]), { lower: -6, upper: -2 });
   assert.deepEqual(calculatePercentageChartDomain([10, 10, 10]), { lower: 9, upper: 11 });
   assert.deepEqual(calculatePercentageChartDomain([-2, -2]), { lower: -3, upper: -1 });
+});
+
+test("selects the nearest horizontal period across the full plot width", () => {
+  assert.equal(nearestPeriodIndex(58, 58, 600, 12), 0);
+  assert.equal(nearestPeriodIndex(658, 58, 600, 12), 11);
+  assert.equal(nearestPeriodIndex(-500, 58, 600, 12), 0);
+  assert.equal(nearestPeriodIndex(5_000, 58, 600, 12), 11);
+  assert.equal(nearestPeriodIndex(358, 58, 600, 12), 6);
+  // Pointer and touch selection intentionally accept horizontal position only;
+  // vertical distance from the line cannot affect the selected period.
+  assert.equal(nearestPeriodIndex(200, 58, 600, 12), nearestPeriodIndex(200, 58, 600, 12));
+});
+
+test("supports keyboard period navigation with bounded first and last endpoints", () => {
+  assert.equal(movePeriodIndex(null, 12, "ArrowRight"), 0);
+  assert.equal(movePeriodIndex(5, 12, "ArrowLeft"), 4);
+  assert.equal(movePeriodIndex(5, 12, "ArrowRight"), 6);
+  assert.equal(movePeriodIndex(0, 12, "ArrowLeft"), 0);
+  assert.equal(movePeriodIndex(11, 12, "ArrowRight"), 11);
+  assert.equal(movePeriodIndex(5, 12, "Home"), 0);
+  assert.equal(movePeriodIndex(5, 12, "End"), 11);
+});
+
+test("anchors positive, negative, and crossing area fills to zero", () => {
+  assert.equal(calculateZeroBaselineY(10, 20, 18, 166), 184);
+  assert.equal(calculateZeroBaselineY(-20, -10, 18, 166), 18);
+  assert.equal(calculateZeroBaselineY(-10, 10, 18, 166), 101);
+  assert.equal(buildZeroAreaPath([{ x: 58, y: 40 }, { x: 658, y: 70 }], 184), "M58 40 L658 70 L658 184 L58 184 Z");
+  assert.equal(buildZeroAreaPath([{ x: 58, y: 140 }, { x: 658, y: 110 }], 18), "M58 140 L658 110 L658 18 L58 18 Z");
+});
+
+test("creates non-conflicting gradient IDs for multiple chart instances", () => {
+  const first = chartGradientId(":r1:");
+  const second = chartGradientId(":r2:");
+  assert.notEqual(first, second);
+  assert.match(first, /^compass-line-gradient-[a-zA-Z0-9_-]+$/);
+  assert.match(second, /^compass-line-gradient-[a-zA-Z0-9_-]+$/);
 });
 
 const balanceSheetRequest = (period: string) => ({ companyId: "vch", period, records: volunteerCustomHomesBalanceSheetRecords, statements: incomeStatements, periods: financialPeriods, mappings: volunteerCustomHomesBalanceSheetAccountMappings, categories: balanceSheetReportingCategories, openingEquityAnchor: volunteerCustomHomesOpeningEquityAnchor, fiscalYearEndMonth: 12 });
@@ -941,7 +1103,44 @@ test("builds the selected Balance Sheet hierarchy with details before subtotals"
   assert.ok(index("Current Fiscal-Year Net Income") < index("Total Equity"));
   assert.equal(model.rows[index("Accumulated Depreciation")].displayValue?.startsWith("("), true);
   assert.equal(model.rows[index("Owner Distributions")].displayValue?.startsWith("("), true);
-  assert.equal(model.rows.at(-1)?.displayValue, "Balanced");
+  assert.equal(model.rows.at(-1)?.label, "Total Liabilities and Equity");
+  assert.equal(model.rows.some((row) => row.label === "Accounting Equation Difference"), false);
+  assert.equal(model.accountingEquationWarning, null);
+});
+
+test("shows no Balance Sheet warning at zero or within rounding tolerance", () => {
+  assert.equal(buildAccountingEquationWarning(0, "2026-06"), null);
+  assert.equal(buildAccountingEquationWarning(ACCOUNTING_EQUATION_ROUNDING_TOLERANCE_DOLLARS, "2026-06"), null);
+  assert.equal(buildAccountingEquationWarning(-ACCOUNTING_EQUATION_ROUNDING_TOLERANCE_DOLLARS, "2026-06"), null);
+});
+
+test("builds an exact period-specific Balance Sheet out-of-balance warning beyond tolerance", () => {
+  assert.deepEqual(buildAccountingEquationWarning(2, "2026-06"), {
+    title: "Balance Sheet Out of Balance",
+    difference: 2,
+    displayDifference: "$2",
+    period: "2026-06",
+    periodLabel: "June 2026",
+  });
+  assert.deepEqual(buildAccountingEquationWarning(-3, "2026-05"), {
+    title: "Balance Sheet Out of Balance",
+    difference: -3,
+    displayDifference: "-$3",
+    period: "2026-05",
+    periodLabel: "May 2026",
+  });
+});
+
+test("updates Balance Sheet warning state with the selected period", () => {
+  const june = buildAccountingEquationWarning(4, "2026-06");
+  const may = buildAccountingEquationWarning(0, "2026-05");
+  assert.equal(june?.periodLabel, "June 2026");
+  assert.equal(june?.displayDifference, "$4");
+  assert.equal(may, null);
+  const source = readFileSync(new URL("../components/app/balance-sheet-view.tsx", import.meta.url), "utf8");
+  assert.match(source, /model\.accountingEquationWarning \?/);
+  assert.match(source, /role="alert"/);
+  assert.doesNotMatch(source, /Accounting Equation Difference.*<\/tr>/s);
 });
 
 test("builds approved June summaries and May prior-month comparisons", () => {
@@ -961,21 +1160,65 @@ test("builds approved June summaries and May prior-month comparisons", () => {
   assert.equal(model.summaries.every((summary) => summary.comparison !== null), true);
 });
 
-test("builds 24 authoritative Cash and liquidity trend endpoints", () => {
+test("builds June Cash and liquidity trends from the trailing 12 monthly endpoints", () => {
   const cash = buildCashViewModel("2026-06");
   const balanceSheet = buildBalanceSheetViewModel("2026-06");
+  const expectedPeriods = getMonthlyPeriodWindow("2026-06", 12);
   assert.equal(cash.cash, 418_000);
   assert.equal(cash.cash, balanceSheet.current.components.cash);
-  assert.equal(cash.cashTrend.length, 24);
-  assert.deepEqual(cash.cashTrend.map((point) => point.period), getMonthlyPeriodWindow("2026-06", 24));
+  assert.equal(cash.cashTrend.length, 12);
+  assert.deepEqual(cash.cashTrend.map((point) => point.period), expectedPeriods);
   assert.equal(cash.cashTrend.at(-1)?.value, 418_000);
-  assert.equal(balanceSheet.trends.length, 24);
+  assert.equal(balanceSheet.trends.length, 12);
+  assert.deepEqual(balanceSheet.trends.map((point) => point.period), expectedPeriods);
   for (const point of balanceSheet.trends) {
     const statement = requireCompleteBalanceSheet(point.period);
     assert.equal(point.workingCapital, statement.liquidity.workingCapital);
     assert.equal(point.currentRatio, statement.liquidity.currentRatio);
     assert.equal(point.quickRatio, statement.liquidity.quickRatio);
   }
+  for (const point of cash.cashTrend) {
+    assert.equal(point.value, requireCompleteBalanceSheet(point.period).components.cash);
+  }
+});
+
+test("ends historical Cash and liquidity trends at the selected period", () => {
+  const cash = buildCashViewModel("2025-08");
+  const balanceSheet = buildBalanceSheetViewModel("2025-08");
+  const expectedPeriods = getMonthlyPeriodWindow("2025-08", 12);
+  assert.deepEqual(cash.cashTrend.map((point) => point.period), expectedPeriods);
+  assert.deepEqual(balanceSheet.trends.map((point) => point.period), expectedPeriods);
+  assert.equal(cash.cashTrend.at(-1)?.period, "2025-08");
+  assert.equal(balanceSheet.trends.at(-1)?.period, "2025-08");
+  assert.equal(cash.cashTrend.some((point) => point.period > "2025-08"), false);
+  assert.equal(balanceSheet.trends.some((point) => point.period > "2025-08"), false);
+});
+
+test("updates dependent statement, Balance Sheet, Cash, and chart endpoints for a selected period", () => {
+  const selectedPeriod = "2025-08";
+  const incomeStatement = buildIncomeStatementViewModel({ endPeriod: selectedPeriod, view: "r12m", statements: incomeStatements, periods: financialPeriods });
+  const balanceSheet = buildBalanceSheetViewModel(selectedPeriod);
+  const cash = buildCashViewModel(selectedPeriod);
+  assert.equal(incomeStatement.status, "complete");
+  if (incomeStatement.status !== "complete") assert.fail("Expected selected Income Statement period to be complete.");
+  assert.equal(incomeStatement.endPeriod, selectedPeriod);
+  assert.equal(incomeStatement.chartSeries.at(-1)?.period, selectedPeriod);
+  assert.equal(balanceSheet.current.period, selectedPeriod);
+  assert.equal(balanceSheet.trends.at(-1)?.period, selectedPeriod);
+  assert.equal(cash.period, selectedPeriod);
+  assert.equal(cash.cashTrend.at(-1)?.period, selectedPeriod);
+  assert.equal(cash.cash, requireCompleteBalanceSheet(selectedPeriod).components.cash);
+});
+
+test("uses only available history for early trend selections without reducing selectors", () => {
+  const cash = buildCashViewModel("2024-09");
+  const balanceSheet = buildBalanceSheetViewModel("2024-09");
+  const expectedPeriods = ["2024-07", "2024-08", "2024-09"];
+  assert.deepEqual(cash.cashTrend.map((point) => point.period), expectedPeriods);
+  assert.deepEqual(balanceSheet.trends.map((point) => point.period), expectedPeriods);
+  assert.equal(balanceSheet.periods.length, 24);
+  assert.deepEqual(balanceSheet.periods.map((period) => period.id), getMonthlyPeriodWindow("2026-06", 24));
+  assert.equal(cash.cashTrend.at(-1)?.value, requireCompleteBalanceSheet("2024-09").components.cash);
 });
 
 test("keeps July operational AR and AP distinct from June control balances", () => {

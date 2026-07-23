@@ -28,12 +28,12 @@ const trendPresentation = [
 const toneStyles = {
   positive: {
     badge: "bg-emerald-50 text-emerald-700",
-    line: "text-emerald-600",
+    line: "text-slate-600",
     Icon: ArrowUpRight,
   },
   attention: {
     badge: "bg-amber-50 text-amber-700",
-    line: "text-amber-600",
+    line: "text-slate-600",
     Icon: ArrowDownRight,
   },
 };
@@ -96,7 +96,7 @@ export function ProfitabilityTrends({ model }: { model: DashboardFinancialModel 
     >
       <div className="flex flex-col gap-3 border-b border-slate-200/80 px-5 py-5 sm:flex-row sm:items-end sm:justify-between sm:px-6">
         <div>
-          <div className="flex items-center gap-2 text-blue-700">
+          <div className="flex items-center gap-2 text-brand-700">
             <TrendingUp aria-hidden="true" className="size-4" strokeWidth={2} />
             <p className="text-xs font-semibold uppercase tracking-[0.09em]">
               Profitability trends

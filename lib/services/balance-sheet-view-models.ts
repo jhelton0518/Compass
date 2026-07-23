@@ -7,13 +7,13 @@ import { balanceSheetReportingCategories } from "../../data/balance-sheet-report
 import { volunteerCustomHomesBalanceSheetAccountMappings } from "../../data/account-mappings.ts";
 import { calculateBalanceSheet } from "./balance-sheet-service.ts";
 import { formatDollarAbbreviation, formatDollars } from "../formatters/financial.ts";
+import { formatClosedPeriodLabel } from "./period-selection.ts";
 
-const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const COMPANY_ID = "vch";
+export const ACCOUNTING_EQUATION_ROUNDING_TOLERANCE_DOLLARS = 1;
 
 export function fullPeriodLabel(period: string) {
-  const [year, month] = period.split("-").map(Number);
-  return `${monthNames[month - 1]} ${year}`;
+  return formatClosedPeriodLabel(period);
 }
 
 function calculate(period: string) {
@@ -44,7 +44,18 @@ function completeStatements(periods: readonly FinancialPeriodMetadata[]) {
   return periods.filter((period) => period.status === "closed").map((period) => calculate(period.id)).flatMap((result) => result.status === "complete" ? [result] : []);
 }
 
-type StatementRow = { label: string; kind: "section" | "group" | "detail" | "subtotal" | "total" | "reconciliation"; amount?: number; displayValue?: string; accessibleValue?: string };
+type StatementRow = { label: string; kind: "section" | "group" | "detail" | "subtotal" | "total"; amount?: number; displayValue?: string; accessibleValue?: string };
+
+export function buildAccountingEquationWarning(difference: number, period: string) {
+  if (Math.abs(difference) <= ACCOUNTING_EQUATION_ROUNDING_TOLERANCE_DOLLARS) return null;
+  return {
+    title: "Balance Sheet Out of Balance",
+    difference,
+    displayDifference: formatDollars(difference),
+    period,
+    periodLabel: fullPeriodLabel(period),
+  };
+}
 
 function statementRows(statement: BalanceSheetStatement): StatementRow[] {
   const lines = (section: "assets" | "liabilities" | "equity", classification?: "current" | "non-current") => statement.lines.filter((line) => line.section === section && (classification === undefined || line.classification === classification));
@@ -59,7 +70,6 @@ function statementRows(statement: BalanceSheetStatement): StatementRow[] {
     { label: "Non-Current Liabilities", kind: "group" }, ...detailRows("liabilities", "non-current"), amountRow("Total Non-Current Liabilities", "subtotal", statement.totalNonCurrentLiabilities), amountRow("Total Liabilities", "total", statement.totalLiabilities),
     { label: "Equity", kind: "section" }, ...lines("equity").map((line) => amountRow(line.label, "detail", line.amount)), amountRow("Total Equity", "total", statement.totalEquity),
     amountRow("Total Liabilities and Equity", "total", statement.liabilitiesAndEquity),
-    { label: "Accounting Equation Difference", kind: "reconciliation", amount: statement.accountingEquationDifference, displayValue: statement.accountingEquationDifference === 0 ? "Balanced" : tableDollars(statement.accountingEquationDifference), accessibleValue: formatDollars(statement.accountingEquationDifference) },
   ];
 }
 
@@ -77,8 +87,9 @@ export function buildBalanceSheetViewModel(selectedPeriod?: string) {
     { key: "current-ratio", label: "Current Ratio", value: ratioValue(current.liquidity.currentRatio), comparison: ratioChange(prior && current.liquidity.currentRatio !== null && prior.liquidity.currentRatio !== null ? current.liquidity.currentRatio - prior.liquidity.currentRatio : null), definition: "Current Assets ÷ Current Liabilities" },
     { key: "quick-ratio", label: "Quick Ratio", value: ratioValue(current.liquidity.quickRatio), comparison: ratioChange(prior && current.liquidity.quickRatio !== null && prior.liquidity.quickRatio !== null ? current.liquidity.quickRatio - prior.liquidity.quickRatio : null), definition: "Quick Assets ÷ Current Liabilities" },
   ];
-  const trends = statements.map((statement) => ({ period: statement.period, fullLabel: fullPeriodLabel(statement.period), cash: statement.components.cash, workingCapital: statement.liquidity.workingCapital, currentRatio: statement.liquidity.currentRatio, quickRatio: statement.liquidity.quickRatio }));
-  return { current, priorPeriod: prior?.period ?? null, periods: statements.map((statement) => ({ id: statement.period, label: fullPeriodLabel(statement.period) })), summaries, rows: statementRows(current), trends };
+  const trendStatements = statements.slice(Math.max(0, currentIndex - 11), currentIndex + 1);
+  const trends = trendStatements.map((statement) => ({ period: statement.period, fullLabel: fullPeriodLabel(statement.period), cash: statement.components.cash, workingCapital: statement.liquidity.workingCapital, currentRatio: statement.liquidity.currentRatio, quickRatio: statement.liquidity.quickRatio }));
+  return { current, priorPeriod: prior?.period ?? null, periods: statements.map((statement) => ({ id: statement.period, label: fullPeriodLabel(statement.period) })), summaries, rows: statementRows(current), trends, accountingEquationWarning: buildAccountingEquationWarning(current.accountingEquationDifference, current.period) };
 }
 
 export function buildCashViewModel(selectedPeriod?: string) {

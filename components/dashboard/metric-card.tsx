@@ -32,11 +32,11 @@ export function MetricCard({
   return (
     <article
       className={`relative overflow-hidden rounded-2xl border bg-white p-5 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-6 ${
-        featured ? "border-blue-200/80" : "border-slate-200/80"
+        featured ? "border-brand-200" : "border-slate-200/80"
       }`}
     >
       {featured ? (
-        <div className="absolute inset-x-0 top-0 h-0.5 bg-blue-500" />
+        <div className="absolute inset-x-0 top-0 h-0.5 bg-brand-500" />
       ) : null}
 
       <div className="flex items-start justify-between gap-4">
@@ -50,7 +50,7 @@ export function MetricCard({
 
         <span
           className={`grid size-10 shrink-0 place-items-center rounded-xl ${
-            featured ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-600"
+            featured ? "bg-brand-50 text-brand-700" : "bg-slate-100 text-slate-600"
           }`}
         >
           <Icon aria-hidden="true" className="size-[18px]" strokeWidth={1.9} />
@@ -69,7 +69,7 @@ export function MetricCard({
 
         <svg
           aria-hidden="true"
-          className={`h-10 w-24 ${featured ? "text-blue-500" : "text-slate-400"}`}
+          className="h-10 w-24 text-slate-600"
           viewBox="0 0 96 40"
           fill="none"
         >

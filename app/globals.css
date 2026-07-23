@@ -3,6 +3,34 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
+  --company-primary-accent: #2563eb;
+  --company-primary-accent-hover: #1d4ed8;
+  --company-primary-accent-soft: #eff6ff;
+  --company-primary-accent-border: #bfdbfe;
+  --company-primary-accent-foreground: #ffffff;
+  --company-brand-surface: #0b1729;
+  --company-brand-surface-elevated: #13243b;
+  --company-brand-surface-border: #263b55;
+  --company-navigation-text: #e2e8f0;
+  --company-navigation-muted-text: #94a3b8;
+  --company-navigation-hover-background: #172941;
+  --company-navigation-active-background: #1d4ed8;
+  --company-focus-ring: #2563eb;
+  --company-link-color: #1d4ed8;
+  /* Financial data colors are deliberately independent from company branding. */
+  --financial-chart-line: #475569;
+  --financial-chart-gradient: #64748b;
+  --financial-chart-marker: #475569;
+  --financial-chart-guide: #94a3b8;
+  --financial-aging-bar: #64748b;
+  --financial-aging-bar-interactive: #475569;
+  --company-table-section-background: #eff6ff;
+  --company-table-section-border: #bfdbfe;
+  --company-table-section-text: #1e40af;
+  --company-table-highlight-background: #eff6ff;
+  --company-selected-control-background: #1d4ed8;
+  --company-selected-control-border: #2563eb;
+  --company-selected-control-text: #ffffff;
 }
 
 @theme inline {
@@ -11,9 +39,27 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  --color-brand-50: #eff6ff;
-  --color-brand-700: #1d4ed8;
-  --color-brand-800: #1e40af;
+  --color-brand-50: var(--company-primary-accent-soft);
+  --color-brand-500: var(--company-primary-accent);
+  --color-brand-200: var(--company-primary-accent-border);
+  --color-brand-700: var(--company-primary-accent-hover);
+  --color-brand-800: var(--company-link-color);
+  --color-brand-contrast: var(--company-primary-accent-foreground);
+  --color-sidebar: var(--company-brand-surface);
+  --color-sidebar-elevated: var(--company-brand-surface-elevated);
+  --color-sidebar-border: var(--company-brand-surface-border);
+  --color-nav-text: var(--company-navigation-text);
+  --color-nav-muted: var(--company-navigation-muted-text);
+  --color-nav-hover: var(--company-navigation-hover-background);
+  --color-nav-active: var(--company-navigation-active-background);
+  --color-theme-link: var(--company-link-color);
+  --color-table-section: var(--company-table-section-background);
+  --color-table-section-border: var(--company-table-section-border);
+  --color-table-section-text: var(--company-table-section-text);
+  --color-table-highlight: var(--company-table-highlight-background);
+  --color-control-selected: var(--company-selected-control-background);
+  --color-control-selected-border: var(--company-selected-control-border);
+  --color-control-selected-text: var(--company-selected-control-text);
 }
 
 body {
@@ -25,4 +71,9 @@ body {
 
 * {
   box-sizing: border-box;
+}
+
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--company-focus-ring);
+  outline-offset: 2px;
 }
